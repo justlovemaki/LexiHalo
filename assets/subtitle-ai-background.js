@@ -59,9 +59,16 @@
     let text = String(value || "").trim();
     const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
     if (fenced) text = fenced[1].trim();
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    return start >= 0 && end > start ? text.slice(start, end + 1) : text;
+    const firstBrace = text.indexOf("{");
+    const firstBracket = text.indexOf("[");
+    if (firstBracket >= 0 && (firstBrace < 0 || firstBracket < firstBrace)) {
+      const lastBracket = text.lastIndexOf("]");
+      if (lastBracket > firstBracket) return text.slice(firstBracket, lastBracket + 1);
+    } else if (firstBrace >= 0) {
+      const lastBrace = text.lastIndexOf("}");
+      if (lastBrace > firstBrace) return text.slice(firstBrace, lastBrace + 1);
+    }
+    return text;
   };
 
   const validateSegments = (payload, lines, options) => {
@@ -247,6 +254,57 @@
     await chrome.storage.local.set({ [CACHE_KEY]: Object.fromEntries(entries.slice(0, MAX_CACHE_ENTRIES)) });
   };
 
+  globalThis.lexihaloTranslateSubtitlesWithAi = async params => {
+    const { texts, from, to, engine, useCache } = params;
+    if (!isAiEngine(engine) || !Array.isArray(texts) || !texts.length) return null;
+
+    const cacheKey = await digest(JSON.stringify({
+      version: 7,
+      type: "subtitle-ai-bilingual",
+      engine: engine._id,
+      model: engine.model,
+      from: from || "auto",
+      to,
+      texts
+    }));
+
+    if (useCache !== false) {
+      const cached = await getCached(cacheKey);
+      if (Array.isArray(cached) && cached.length === texts.length) {
+        return cached;
+      }
+    }
+
+    const prompt = [
+      "You are an expert bilingual subtitle translator and editor.",
+      `Source Language: ${from || "auto"}`,
+      `Target Language: ${to}`,
+      "Instructions for this sequential batch of subtitles:",
+      "1. Read all subtitles in order to understand the conversational context.",
+      "2. Conservatively repair any ASR speech recognition errors (homophones, typos, broken punctuation, cut-off phrases) in the source text based on clear context. Never rewrite colloquial speech into artificial formal vocabulary.",
+      "3. Accurately and naturally translate each subtitle line into the target language.",
+      "4. Output MUST be a strict JSON array of objects with 'repaired' and 'translation' fields, exactly matching the input length and order.",
+      `Input Subtitles: ${JSON.stringify(texts)}`,
+      'Output JSON format: [{"repaired":"...","translation":"..."}]'
+    ].join("\n");
+
+    try {
+      const output = await callEngine(engine, prompt);
+      const parsed = JSON.parse(stripCodeFence(output));
+      if (!Array.isArray(parsed) || parsed.length !== texts.length) return null;
+      const result = parsed.map((item, idx) => ({
+        message: "ok",
+        translation: String(item?.translation || "").trim() || texts[idx],
+        repairedText: String(item?.repaired || "").trim() || texts[idx]
+      }));
+      await setCached(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.warn("[LexiHalo] AI subtitle translation with repair failed, falling back to standard translator", error);
+      return null;
+    }
+  };
+
   const clearIndexedDbStore = (dbName, storeName) => new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName);
     request.onerror = () => reject(request.error || new Error(`无法打开缓存 ${dbName}`));
@@ -282,7 +340,7 @@
     let translationMemoryCacheCleared = false;
     let translationCacheCleared = false;
 
-    if (target === "all" || target === "ai-subtitle") {
+    if (target === "all" || target === "ai-subtitle" || target === "subtitle") {
       await chrome.storage.local.remove(CACHE_KEY);
       aiSubtitleCacheCleared = true;
     }

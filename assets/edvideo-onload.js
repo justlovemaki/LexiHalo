@@ -110,7 +110,6 @@
 
   const boot = () => {
     inject("assets/edvideo-main.js");
-    inject("assets/subtitle-ai-main.js");
     inject("assets/romanize-main.js");
     inject("assets/ld-main.js");
   };
