@@ -29,6 +29,7 @@
 - 双语字幕支持网站列表已与 Manifest 对齐，展示 YouTube、Netflix、Max/HBO、Disney+、Prime Video、Coursera、Udemy、edX、DeepLearning.AI、TED、Bilibili 和 Vimeo。
 - 翻译引擎页面已移除无意义的原上游云端额度余额（原 `1.0000`）和不可用的托管高级引擎分组，只显示免费引擎及本地 BYOK 引擎。
 - 字幕单词点击不再受“悬停词典”开关和 lookup 状态限制；即使字幕被渲染成无事件的普通文本，也会由顶层委托点击处理器打开 AI 详解侧栏。
+- Trusted Types 兼容逻辑会优先复用页面已有的默认策略，或仅创建 CSP 允许的 `default` 策略，不再尝试创建被 YouTube 等网站 CSP 禁止的自定义策略名。
 - 词书切换的客户端会员判断已移除。
 - 高级翻译引擎在客户端统一标记为可选，`AIEngineAvailable` 默认开启。
 - 新增本地 BYOK 配置页 `byok.html`，支持 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 和 OpenAI 兼容接口。
