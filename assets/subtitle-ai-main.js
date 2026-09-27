@@ -43,6 +43,7 @@
     disabled: "AI 处理已关闭",
     waiting: "等待原字幕",
     processing: "AI 处理中",
+    boundary: "正在处理分段边界",
     done: "AI 处理完成",
     noEngine: "请先配置 AI 引擎",
     loadingEngine: "正在读取 AI 模型"
@@ -62,6 +63,7 @@
     disabled: "AI processing off",
     waiting: "Waiting for subtitles",
     processing: "Processing with AI",
+    boundary: "Reconciling segment boundaries",
     done: "AI processing complete",
     noEngine: "Configure an AI engine first",
     loadingEngine: "Loading AI models"
@@ -261,36 +263,38 @@
     state.processing = true;
     setStatus(`${text.processing}… 0/${rawLines.length}`);
 
+    const requestRange = async (start, end) => {
+      const lines = rawLines.slice(start, end).map((line, index) => ({
+        id: start + index,
+        text: line.text || ""
+      }));
+      const beforeStart = Math.max(0, start - CONTEXT_BEFORE);
+      const contextBefore = rawLines.slice(beforeStart, start).map((line, index) => ({
+        id: beforeStart + index,
+        text: line.text || ""
+      }));
+      const contextAfter = rawLines.slice(end, end + CONTEXT_AFTER).map((line, index) => ({
+        id: end + index,
+        text: line.text || ""
+      }));
+      const result = await request("lexihalo:subtitle-ai:process", {
+        engineId: state.config.engineId,
+        language: provider.from || document.documentElement.lang || "auto",
+        options: { segmentation: true, repair: true },
+        lines,
+        contextBefore,
+        contextAfter
+      });
+      if (!Array.isArray(result?.segments)) throw new Error("AI did not return subtitle segments");
+      return { segments: result.segments, count: lines.length };
+    };
+
     try {
       for (const offset of offsets) {
         if (generation !== state.requestGeneration || provider !== state.provider || videoId !== state.videoId) return;
-        const chunk = rawLines.slice(offset, offset + CHUNK_SIZE).map((line, index) => ({
-          id: offset + index,
-          text: line.text || ""
-        }));
-        const contextBefore = rawLines
-          .slice(Math.max(0, offset - CONTEXT_BEFORE), offset)
-          .map((line, index) => ({
-            id: Math.max(0, offset - CONTEXT_BEFORE) + index,
-            text: line.text || ""
-          }));
-        const contextAfter = rawLines
-          .slice(offset + chunk.length, offset + chunk.length + CONTEXT_AFTER)
-          .map((line, index) => ({
-            id: offset + chunk.length + index,
-            text: line.text || ""
-          }));
-        const result = await request("lexihalo:subtitle-ai:process", {
-          engineId: state.config.engineId,
-          language: provider.from || document.documentElement.lang || "auto",
-          options: { segmentation: true, repair: true },
-          lines: chunk,
-          contextBefore,
-          contextAfter
-        });
-        if (!Array.isArray(result?.segments)) throw new Error("AI did not return subtitle segments");
+        const result = await requestRange(offset, Math.min(rawLines.length, offset + CHUNK_SIZE));
         chunkResults.set(offset, result.segments);
-        completed += chunk.length;
+        completed += result.count;
 
         if (generation !== state.requestGeneration || provider !== state.provider || videoId !== state.videoId) return;
         const currentSig = signature(provider.lines || []);
@@ -304,6 +308,52 @@
         state.observedSignature = state.processedSignature;
         if (!replaceProviderLines(processed)) throw new Error("Subtitle source changed before AI processing completed");
         setStatus(`${text.processing}… ${completed}/${rawLines.length}`);
+      }
+
+      // Re-run a small target window around every chunk edge. Unlike the
+      // read-only lookahead context, these windows own lines on both sides of
+      // the edge, so AI may merge or split across the boundary safely.
+      let reconciled = Array.from(chunkResults.entries())
+        .sort((a, b) => a[0] - b[0])
+        .flatMap(([, segments]) => segments);
+      const boundaries = [];
+      for (let boundary = CHUNK_SIZE; boundary < rawLines.length; boundary += CHUNK_SIZE) boundaries.push(boundary);
+      for (let boundaryIndex = 0; boundaryIndex < boundaries.length; boundaryIndex += 1) {
+        if (generation !== state.requestGeneration || provider !== state.provider || videoId !== state.videoId) return;
+        const boundary = boundaries[boundaryIndex];
+        let start = Math.max(0, boundary - 6);
+        let end = Math.min(rawLines.length, boundary + 8);
+        let expanded = true;
+        while (expanded) {
+          expanded = false;
+          for (const segment of reconciled) {
+            const first = segment.source_ids[0];
+            const last = segment.source_ids[segment.source_ids.length - 1];
+            if (last < start || first >= end) continue;
+            const nextStart = Math.min(start, first);
+            const nextEnd = Math.max(end, last + 1);
+            if (nextStart !== start || nextEnd !== end) {
+              start = nextStart;
+              end = nextEnd;
+              expanded = true;
+            }
+          }
+        }
+        if (end - start > 64) throw new Error("字幕边界上下文过长，请缩短单条字幕后重试");
+        const result = await requestRange(start, end);
+        reconciled = reconciled.filter(segment => {
+          const first = segment.source_ids[0];
+          const last = segment.source_ids[segment.source_ids.length - 1];
+          return last < start || first >= end;
+        });
+        reconciled.push(...result.segments);
+        reconciled.sort((a, b) => a.source_ids[0] - b.source_ids[0]);
+
+        const processed = buildLines(rawLines, reconciled);
+        state.processedSignature = signature(processed);
+        state.observedSignature = state.processedSignature;
+        if (!replaceProviderLines(processed)) throw new Error("Subtitle source changed during boundary processing");
+        setStatus(`${text.boundary}… ${boundaryIndex + 1}/${boundaries.length}`);
       }
       setStatus(text.done);
     } catch (error) {

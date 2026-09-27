@@ -31,8 +31,8 @@
   };
 
   const sanitizeLines = lines => {
-    if (!Array.isArray(lines) || !lines.length || lines.length > 32) {
-      throw new Error("每次只能处理 1–32 条字幕");
+    if (!Array.isArray(lines) || !lines.length || lines.length > 64) {
+      throw new Error("每次只能处理 1–64 条字幕");
     }
     return lines.map((line, index) => {
       const id = Number(line?.id);
