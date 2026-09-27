@@ -27,6 +27,7 @@
 - 快速翻译改用独立的 `xt-card` 容器，并在侧栏关闭动画完成后再挂载，避免与 `xt-slider` React 根节点冲突导致 `removeChild` 异常。
 - 设置首页已移除账号、Free Access 标识、邮箱验证横幅、词书高亮、教程、反馈和更新日志，并停止首页的 Profile、Meta、Config、通知及词书云端请求；保留 BYOK 引擎和本地功能设置。
 - 双语字幕支持网站列表已与 Manifest 对齐，展示 YouTube、Netflix、Max/HBO、Disney+、Prime Video、Coursera、Udemy、edX、DeepLearning.AI、TED、Bilibili 和 Vimeo。
+- 沉浸式翻译增强了无限滚动和虚拟列表支持：新增空容器也会进入观察队列，并在 350ms 与 1200ms 后复查异步填充内容；文本节点更新会延迟复查，进入视口时再执行翻译。
 - 翻译引擎页面已移除无意义的原上游云端额度余额（原 `1.0000`）和不可用的托管高级引擎分组，只显示免费引擎及本地 BYOK 引擎。
 - 字幕单词点击不再受“悬停词典”开关和 lookup 状态限制；即使字幕被渲染成无事件的普通文本，也会由顶层委托点击处理器打开 AI 详解侧栏。
 - Trusted Types 兼容逻辑会优先复用页面已有的默认策略，或仅创建 CSP 允许的 `default` 策略，不再尝试创建被 YouTube 等网站 CSP 禁止的自定义策略名。
