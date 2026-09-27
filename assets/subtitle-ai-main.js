@@ -103,6 +103,39 @@
   const signature = lines => (lines || []).map(line => `${line.start}:${line.end}:${line.text || ""}`).join("\u241e");
   const cloneLines = lines => lines.map(line => ({ ...line, tokens: Array.isArray(line.tokens) ? [...line.tokens] : [] }));
 
+  const updateFloatingBadge = (message, phase, isError) => {
+    let badge = document.getElementById("lexihalo-floating-subtitle-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "lexihalo-floating-subtitle-badge";
+      document.body.appendChild(badge);
+    }
+
+    if (phase === "off" || !message) {
+      badge.classList.remove("visible", "processing", "done", "error");
+      badge.style.display = "none";
+      return;
+    }
+
+    badge.style.display = "flex";
+    badge.className = `lexihalo-floating-badge visible ${phase} ${isError ? "error" : ""}`;
+    badge.textContent = message;
+
+    if (window.lexihaloBadgeTimer) {
+      clearTimeout(window.lexihaloBadgeTimer);
+      window.lexihaloBadgeTimer = null;
+    }
+
+    if (phase === "applied-changed" || phase === "applied-unchanged") {
+      window.lexihaloBadgeTimer = window.setTimeout(() => {
+        badge.classList.remove("visible");
+        window.setTimeout(() => {
+          if (!badge.classList.contains("visible")) badge.style.display = "none";
+        }, 400);
+      }, 3500);
+    }
+  };
+
   const setStatus = (message, error = false, phase = "") => {
     state.status = message;
     state.statusError = error;
@@ -111,6 +144,7 @@
       element.textContent = message;
       element.classList.toggle("error", error);
     });
+    updateFloatingBadge(message, phase || (error ? "error" : "info"), error);
   };
 
   window.lexihaloBeforeEnableSubtitleAI = () => {
@@ -150,6 +184,15 @@
     provider.translatingIdx = [];
     provider.tokenizeAttempted?.clear?.();
     provider.event?.emit?.("changed", { current: provider.current, forceUpdate: true });
+
+    // Synchronize Redux store so the sidebar transcript, sentence reader,
+    // and practice mode all reflect the AI-repaired subtitles immediately.
+    try {
+      window.dispatchEvent(new CustomEvent("edvideo:dispatch", {
+        detail: { body: { type: "setPlayerLines", payload: { lines } } }
+      }));
+    } catch {}
+
     return true;
   };
 
@@ -180,16 +223,20 @@
       const first = source[0];
       const last = source[source.length - 1];
       const line = { ...first };
-      delete line.translation;
-      delete line.AITranslation;
-      delete line.translateEngine;
-      delete line.message;
-      delete line.sameLangTo;
+      const fallbackTranslation = source
+        .map(item => item.AITranslation || item.translation || "")
+        .filter(Boolean)
+        .join(" ");
       line.idx = index;
       line.start = first.start;
       line.end = last.end;
       line.text = segment.text;
       line.tokens = [];
+      line.translation = fallbackTranslation;
+      delete line.AITranslation;
+      delete line.translateEngine;
+      delete line.message;
+      delete line.sameLangTo;
       line.vid = first.vid || state.videoId;
       return {
         line,
@@ -446,7 +493,7 @@
     state.timer = window.setTimeout(() => {
       state.timer = 0;
       processCurrent(cloneLines(state.rawLines), state.rawSignature);
-    }, 1400);
+    }, 350);
   };
 
   const bindProvider = provider => {
