@@ -42,6 +42,17 @@
     });
   };
 
+  const sanitizeContextLines = (lines, label) => {
+    if (!Array.isArray(lines)) return [];
+    if (lines.length > 20) throw new Error(`${label}最多只能包含 20 条字幕`);
+    return lines.map((line, index) => {
+      const id = Number(line?.id);
+      const text = String(line?.text || "").replace(/\s+/g, " ").trim().slice(0, 800);
+      if (!Number.isInteger(id) || !text) throw new Error(`${label}第 ${index + 1} 条字幕无效`);
+      return { id, text };
+    });
+  };
+
   const stripCodeFence = value => {
     let text = String(value || "").trim();
     const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
@@ -92,7 +103,7 @@
     return normalized;
   };
 
-  const promptFor = (lines, language, options) => {
+  const promptFor = (lines, language, options, contextBefore, contextAfter) => {
     const tasks = [];
     if (options.segmentation) {
       tasks.push("按语义、标点、说话停顿和阅读长度重新分段。可合并相邻碎片，也可拆分过长字幕，但不要跨越明显停顿或不同说话人；每段尽量适合两行字幕显示");
@@ -109,15 +120,20 @@
       "你是专业字幕编辑器。处理原语言字幕，不要翻译。",
       `字幕语言：${language || "auto"}`,
       `任务：${tasks.join("；")}。`,
+      "修复时必须结合整段上下文，尤其要参考后文来判断专有名词、同音误识别、代词指向、标点和句子边界；禁止把每条字幕当作互不相关的独立句子处理。",
       "必须遵守：",
       options.segmentation
-        ? "1. 每个输入 ID 必须至少出现一次且顺序不得改变；仅在把一条过长字幕拆成多段时，才可在相邻输出中重复该 ID。"
-        : "1. 每个输入 ID 必须且只能出现一次，顺序不得改变。",
+        ? "1. 每个待处理字幕 ID 必须至少出现一次且顺序不得改变；仅在把一条过长字幕拆成多段时，才可在相邻输出中重复该 ID；严禁输出参考上下文的 ID。"
+        : "1. 每个待处理字幕 ID 必须且只能出现一次，顺序不得改变；严禁输出参考上下文的 ID。",
       "2. source_ids 只能包含连续的输入 ID。",
       "3. 不得丢失语义、凭空补充内容或输出解释。",
       '4. 只返回严格 JSON：{"segments":[{"source_ids":[1,2],"text":"..."}]}。',
-      "输入字幕：",
-      JSON.stringify(lines)
+      "参考上文（只用于理解，不得输出这些 ID）：",
+      JSON.stringify(contextBefore),
+      "待处理字幕（只输出这些 ID）：",
+      JSON.stringify(lines),
+      "参考下文（必须用于消歧，只用于理解，不得输出这些 ID）：",
+      JSON.stringify(contextAfter)
     ].join("\n");
   };
 
@@ -281,6 +297,8 @@
 
   const processSubtitles = async message => {
     const lines = sanitizeLines(message.lines);
+    const contextBefore = sanitizeContextLines(message.contextBefore, "参考上文");
+    const contextAfter = sanitizeContextLines(message.contextAfter, "参考下文");
     // Segmentation and source repair are one atomic preprocessing operation.
     // They must always run together; partial execution would produce timing and
     // text from different subtitle versions.
@@ -293,18 +311,20 @@
 
     const language = String(message.language || "auto").slice(0, 40);
     const cacheKey = await digest(JSON.stringify({
-      version: 1,
+      version: 2,
       engine: engine._id,
       model: engine.model,
       language,
       segmentation: options.segmentation,
       repair: options.repair,
-      lines
+      contextBefore,
+      lines,
+      contextAfter
     }));
     const cached = await getCached(cacheKey);
     if (cached) return { segments: validateSegments({ segments: cached }, lines, options), cached: true };
 
-    const output = await callEngine(engine, promptFor(lines, language, options));
+    const output = await callEngine(engine, promptFor(lines, language, options, contextBefore, contextAfter));
     let parsed;
     try {
       parsed = JSON.parse(stripCodeFence(output));

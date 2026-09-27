@@ -5,6 +5,8 @@
   const RESPONSE_EVENT = "lexihalo:subtitle-ai-response";
   const UI_ID = "lexihalo-subtitle-ai-settings";
   const CHUNK_SIZE = 28;
+  const CONTEXT_BEFORE = 6;
+  const CONTEXT_AFTER = 14;
   const state = {
     config: { segmentation: false, repair: false, engineId: "" },
     engines: [],
@@ -266,11 +268,25 @@
           id: offset + index,
           text: line.text || ""
         }));
+        const contextBefore = rawLines
+          .slice(Math.max(0, offset - CONTEXT_BEFORE), offset)
+          .map((line, index) => ({
+            id: Math.max(0, offset - CONTEXT_BEFORE) + index,
+            text: line.text || ""
+          }));
+        const contextAfter = rawLines
+          .slice(offset + chunk.length, offset + chunk.length + CONTEXT_AFTER)
+          .map((line, index) => ({
+            id: offset + chunk.length + index,
+            text: line.text || ""
+          }));
         const result = await request("lexihalo:subtitle-ai:process", {
           engineId: state.config.engineId,
           language: provider.from || document.documentElement.lang || "auto",
           options: { segmentation: true, repair: true },
-          lines: chunk
+          lines: chunk,
+          contextBefore,
+          contextAfter
         });
         if (!Array.isArray(result?.segments)) throw new Error("AI did not return subtitle segments");
         chunkResults.set(offset, result.segments);
