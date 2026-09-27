@@ -26,7 +26,7 @@
 - 插件侧边栏已精简为关闭、设置、沉浸式翻译和快速翻译四个侧面按钮；移除词库、PDF、学习中心、App 和推广入口。点击扩展图标现在始终打开设置首页，不再因学习语言为英语而默认进入生词本；生词本相关路由也已移除。沉浸式翻译和快速翻译按钮执行后不再自动关闭侧边栏。
 - 快速翻译改用独立的 `xt-card` 容器，并在侧栏关闭动画完成后再挂载，避免与 `xt-slider` React 根节点冲突导致 `removeChild` 异常。
 - 设置首页已移除账号、Free Access 标识、邮箱验证横幅、词书高亮、教程、反馈和更新日志，并停止首页的 Profile、Meta、Config、通知及词书云端请求；保留 BYOK 引擎和本地功能设置。
-- 双语字幕支持网站列表已与 Manifest 对齐，展示 YouTube、Netflix、Max/HBO、Disney+、Prime Video、Coursera、Udemy、edX、DeepLearning.AI、TED、Bilibili 和 Vimeo。
+- 双语字幕支持网站列表已与 Manifest 对齐，展示 YouTube、Netflix、Max/HBO、Disney+、Prime Video、Coursera、Udemy、edX、DeepLearning.AI、TED、Bilibili 和 Vimeo。Bilibili 运行时现在会立即启动按钮、字幕拦截器和字幕容器，不再等待可能错过的 `subtitle.loaded` 事件；检测到新字幕后仅触发刷新。Bilibili 仍要求视频存在可读取的软字幕轨道，画面内烧录字幕无法提取。
 - 沉浸式翻译增强了无限滚动和虚拟列表支持：新增空容器也会进入观察队列，并在 350ms 与 1200ms 后复查异步填充内容；文本节点更新会延迟复查，进入视口时再执行翻译。
 - 翻译引擎页面已移除无意义的原上游云端额度余额（原 `1.0000`）和不可用的托管高级引擎分组，只显示免费引擎及本地 BYOK 引擎。
 - 字幕单词点击不再受“悬停词典”开关和 lookup 状态限制；即使字幕被渲染成无事件的普通文本，也会由顶层委托点击处理器打开 AI 详解侧栏。
