@@ -1,5 +1,5 @@
 {
-  "version": "8.2.0",
+  "version": "8.3.0",
   "name": "__MSG_PKG_NAME__",
   "manifest_version": 3,
   "description": "__MSG_PKG_DESC__",
@@ -50,7 +50,7 @@
         "https://*.vimeo.com/*"
       ],
       "js": ["assets/edvideo-onload.js"],
-      "css": ["assets/edvideo.css"],
+      "css": ["assets/edvideo.css", "assets/subtitle-ai.css"],
       "run_at": "document_start",
       "all_frames": true
     },
@@ -60,8 +60,10 @@
         "assets/site-rules-loader.js",
         "assets/tagger-main.js",
         "assets/ld-main.js",
-        "assets/edreader-main.js"
+        "assets/edreader-main.js",
+        "assets/subtitle-ai-sidebar.js"
       ],
+      "css": ["assets/subtitle-ai.css"],
       "run_at": "document_start",
       "all_frames": true
     }
