@@ -27,7 +27,7 @@
 - 快速翻译改用独立的 `xt-card` 容器，并在侧栏关闭动画完成后再挂载，避免与 `xt-slider` React 根节点冲突导致 `removeChild` 异常。
 - 设置首页已移除账号、Free Access 标识、邮箱验证横幅、词书高亮、教程、反馈和更新日志，并停止首页的 Profile、Meta、Config、通知及词书云端请求；保留 BYOK 引擎和本地功能设置。
 - 双语字幕支持网站列表已与 Manifest 对齐，展示 YouTube、Netflix、Max/HBO、Disney+、Prime Video、Coursera、Udemy、edX、DeepLearning.AI、TED、Bilibili 和 Vimeo。Bilibili 运行时现在会立即启动按钮、字幕拦截器和字幕容器，不再等待可能错过的 `subtitle.loaded` 事件；检测到新字幕后仅触发刷新。Bilibili 仍要求视频存在可读取的软字幕轨道，画面内烧录字幕无法提取。
-- 沉浸式翻译增强了无限滚动和虚拟列表支持：新增空容器也会进入观察队列，并在 350ms 与 1200ms 后复查异步填充内容；文本节点更新会延迟复查，进入视口时再执行翻译。动态 DOM 观察器现已在 Bilibili 等所有支持页面启用，不再只限普通网页和 YouTube，因此滚动加载的评论也会进入翻译队列。
+- 沉浸式翻译增强了无限滚动、虚拟列表和 Shadow DOM 支持：新增空容器会进入观察队列，并在 350ms 与 1200ms 后复查异步填充内容；文本节点更新会延迟复查，进入视口时再执行翻译。动态 DOM 观察器现已在 Bilibili 等所有支持页面启用，并会递归发现、监听和补扫新建的开放 Shadow Root，同时向其中注入翻译样式，因此 Bilibili Web Components 中滚动加载的评论也会进入翻译队列。
 - 翻译引擎页面已移除无意义的原上游云端额度余额（原 `1.0000`）和不可用的托管高级引擎分组，只显示免费引擎及本地 BYOK 引擎。
 - 字幕单词点击不再受“悬停词典”开关和 lookup 状态限制；即使字幕被渲染成无事件的普通文本，也会由顶层委托点击处理器打开 AI 详解侧栏。
 - Trusted Types 兼容逻辑会优先复用页面已有的默认策略，或仅创建 CSP 允许的 `default` 策略，不再尝试创建被 YouTube 等网站 CSP 禁止的自定义策略名。
