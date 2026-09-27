@@ -44,6 +44,9 @@
     waiting: "等待原字幕",
     processing: "AI 处理中",
     boundary: "正在处理分段边界",
+    appliedChanged: "AI 已处理并应用",
+    appliedUnchanged: "AI 已处理并应用，但模型未修改字幕",
+    overwritten: "AI 已生成结果，但字幕源覆盖了处理结果",
     done: "AI 处理完成",
     noEngine: "请先配置 AI 引擎",
     loadingEngine: "正在读取 AI 模型"
@@ -64,6 +67,9 @@
     waiting: "Waiting for subtitles",
     processing: "Processing with AI",
     boundary: "Reconciling segment boundaries",
+    appliedChanged: "AI processed and applied",
+    appliedUnchanged: "AI processed and applied, but the model made no subtitle changes",
+    overwritten: "AI produced a result, but the subtitle source overwrote it",
     done: "AI processing complete",
     noEngine: "Configure an AI engine first",
     loadingEngine: "Loading AI models"
@@ -93,9 +99,10 @@
   const signature = lines => (lines || []).map(line => `${line.start}:${line.end}:${line.text || ""}`).join("\u241e");
   const cloneLines = lines => lines.map(line => ({ ...line, tokens: Array.isArray(line.tokens) ? [...line.tokens] : [] }));
 
-  const setStatus = (message, error = false) => {
+  const setStatus = (message, error = false, phase = "") => {
     state.status = message;
     state.statusError = error;
+    if (phase) document.documentElement.setAttribute("data-lexihalo-subtitle-ai", phase);
     document.querySelectorAll(`#${UI_ID} .lexihalo-subtitle-ai-status, .lexihalo-caption-ai-status`).forEach(element => {
       element.textContent = message;
       element.classList.toggle("error", error);
@@ -111,7 +118,7 @@
       });
       return false;
     }
-    setStatus(text.noEngine, true);
+    setStatus(text.noEngine, true, "blocked-no-engine");
     renderCaptionEngineSelector();
     if (!state.configOpening) {
       state.configOpening = true;
@@ -250,7 +257,7 @@
   const processCurrent = async (rawLines, rawSig) => {
     if (state.processing || !enabled()) return;
     if (!state.config.engineId && !state.engines.length) {
-      setStatus(text.noEngine, true);
+      setStatus(text.noEngine, true, "blocked-no-engine");
       return;
     }
 
@@ -260,8 +267,9 @@
     const chunkResults = new Map();
     const offsets = chunkOrderForCurrentTime(rawLines, provider.current || 0);
     let completed = 0;
+    let lastAppliedLines = null;
     state.processing = true;
-    setStatus(`${text.processing}… 0/${rawLines.length}`);
+    setStatus(`${text.processing}… 0/${rawLines.length}`, false, "processing");
 
     const requestRange = async (start, end) => {
       const lines = rawLines.slice(start, end).map((line, index) => ({
@@ -307,7 +315,8 @@
         state.processedSignature = signature(processed);
         state.observedSignature = state.processedSignature;
         if (!replaceProviderLines(processed)) throw new Error("Subtitle source changed before AI processing completed");
-        setStatus(`${text.processing}… ${completed}/${rawLines.length}`);
+        lastAppliedLines = processed;
+        setStatus(`${text.processing}… ${completed}/${rawLines.length}`, false, "applying");
       }
 
       // Re-run a small target window around every chunk edge. Unlike the
@@ -353,11 +362,35 @@
         state.processedSignature = signature(processed);
         state.observedSignature = state.processedSignature;
         if (!replaceProviderLines(processed)) throw new Error("Subtitle source changed during boundary processing");
-        setStatus(`${text.boundary}… ${boundaryIndex + 1}/${boundaries.length}`);
+        lastAppliedLines = processed;
+        setStatus(`${text.boundary}… ${boundaryIndex + 1}/${boundaries.length}`, false, "boundary");
       }
-      setStatus(text.done);
+
+      if (!lastAppliedLines) throw new Error("AI completed without an applicable subtitle result");
+      const expectedSignature = signature(lastAppliedLines);
+      await new Promise(resolve => window.setTimeout(resolve, 450));
+      if (generation !== state.requestGeneration || provider !== state.provider || videoId !== state.videoId) return;
+      const actualSignature = signature(provider.lines || []);
+      if (actualSignature !== expectedSignature) {
+        setStatus(text.overwritten, true, "overwritten");
+        console.warn("[LexiHalo subtitle AI] processed result was overwritten by the subtitle source", { videoId });
+        return;
+      }
+      const rawText = rawLines.map(line => String(line.text || "").replace(/\s+/g, " ").trim()).join("\n");
+      const appliedText = lastAppliedLines.map(line => String(line.text || "").replace(/\s+/g, " ").trim()).join("\n");
+      const changed = rawText !== appliedText || rawLines.length !== lastAppliedLines.length;
+      const summary = changed
+        ? `${text.appliedChanged}：${rawLines.length} → ${lastAppliedLines.length}`
+        : text.appliedUnchanged;
+      setStatus(summary, false, changed ? "applied-changed" : "applied-unchanged");
+      console.info("[LexiHalo subtitle AI] processing applied", {
+        videoId,
+        inputLines: rawLines.length,
+        outputLines: lastAppliedLines.length,
+        textChanged: rawText !== appliedText
+      });
     } catch (error) {
-      if (generation === state.requestGeneration) setStatus(error?.message || String(error), true);
+      if (generation === state.requestGeneration) setStatus(error?.message || String(error), true, "error");
     } finally {
       if (generation === state.requestGeneration) state.processing = false;
     }
@@ -372,17 +405,17 @@
 
     if (!enabled()) {
       if (state.processedSignature) restoreRaw();
-      setStatus(text.disabled);
+      setStatus(text.disabled, false, "off");
       return;
     }
     if (!state.config.engineId && !state.engines.length) {
-      setStatus(text.noEngine, true);
+      setStatus(text.noEngine, true, "blocked-no-engine");
       return;
     }
 
     const lines = provider.lines || [];
     if (!lines.length) {
-      setStatus(text.waiting);
+      setStatus(text.waiting, false, "waiting");
       return;
     }
     const currentSig = signature(lines);
