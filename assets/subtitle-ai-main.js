@@ -47,6 +47,8 @@
     appliedChanged: "AI 已处理并应用",
     appliedUnchanged: "AI 已处理并应用，但模型未修改字幕",
     overwritten: "AI 已生成结果，但字幕源覆盖了处理结果",
+    withTranslationEvidence: count => `参考了 ${count} 条现有译文`,
+    withoutTranslationEvidence: "未取得现有译文，仅使用原文上下文",
     done: "AI 处理完成",
     noEngine: "请先配置 AI 引擎",
     loadingEngine: "正在读取 AI 模型"
@@ -70,6 +72,8 @@
     appliedChanged: "AI processed and applied",
     appliedUnchanged: "AI processed and applied, but the model made no subtitle changes",
     overwritten: "AI produced a result, but the subtitle source overwrote it",
+    withTranslationEvidence: count => `used ${count} existing translations as evidence`,
+    withoutTranslationEvidence: "no existing translation was available; source context only",
     done: "AI processing complete",
     noEngine: "Configure an AI engine first",
     loadingEngine: "Loading AI models"
@@ -274,16 +278,19 @@
     const requestRange = async (start, end) => {
       const lines = rawLines.slice(start, end).map((line, index) => ({
         id: start + index,
-        text: line.text || ""
+        text: line.text || "",
+        translation: line.AITranslation || line.translation || ""
       }));
       const beforeStart = Math.max(0, start - CONTEXT_BEFORE);
       const contextBefore = rawLines.slice(beforeStart, start).map((line, index) => ({
         id: beforeStart + index,
-        text: line.text || ""
+        text: line.text || "",
+        translation: line.AITranslation || line.translation || ""
       }));
       const contextAfter = rawLines.slice(end, end + CONTEXT_AFTER).map((line, index) => ({
         id: end + index,
-        text: line.text || ""
+        text: line.text || "",
+        translation: line.AITranslation || line.translation || ""
       }));
       const result = await request("lexihalo:subtitle-ai:process", {
         engineId: state.config.engineId,
@@ -379,9 +386,13 @@
       const rawText = rawLines.map(line => String(line.text || "").replace(/\s+/g, " ").trim()).join("\n");
       const appliedText = lastAppliedLines.map(line => String(line.text || "").replace(/\s+/g, " ").trim()).join("\n");
       const changed = rawText !== appliedText || rawLines.length !== lastAppliedLines.length;
+      const translationEvidenceCount = rawLines.filter(line => line.AITranslation || line.translation).length;
+      const evidenceSummary = translationEvidenceCount
+        ? text.withTranslationEvidence(translationEvidenceCount)
+        : text.withoutTranslationEvidence;
       const summary = changed
-        ? `${text.appliedChanged}：${rawLines.length} → ${lastAppliedLines.length}`
-        : text.appliedUnchanged;
+        ? `${text.appliedChanged}：${rawLines.length} → ${lastAppliedLines.length}；${evidenceSummary}`
+        : `${text.appliedUnchanged}；${evidenceSummary}`;
       setStatus(summary, false, changed ? "applied-changed" : "applied-unchanged");
       console.info("[LexiHalo subtitle AI] processing applied", {
         videoId,
@@ -419,7 +430,14 @@
       return;
     }
     const currentSig = signature(lines);
-    if (currentSig === state.processedSignature || currentSig === state.observedSignature) return;
+    if (currentSig === state.processedSignature) return;
+    if (currentSig === state.observedSignature) {
+      // Translation fields do not affect the source signature. Refresh the
+      // pending snapshot so AI receives the newest bilingual evidence that
+      // arrived before processing starts.
+      if (state.timer && currentSig === state.rawSignature) state.rawLines = cloneLines(lines);
+      return;
+    }
 
     state.rawLines = cloneLines(lines);
     state.rawSignature = currentSig;

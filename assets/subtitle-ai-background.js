@@ -37,8 +37,9 @@
     return lines.map((line, index) => {
       const id = Number(line?.id);
       const text = String(line?.text || "").replace(/\s+/g, " ").trim().slice(0, 800);
+      const translation = String(line?.translation || "").replace(/\s+/g, " ").trim().slice(0, 1200);
       if (!Number.isInteger(id) || !text) throw new Error(`第 ${index + 1} 条字幕无效`);
-      return { id, text };
+      return translation ? { id, text, translation } : { id, text };
     });
   };
 
@@ -48,8 +49,9 @@
     return lines.map((line, index) => {
       const id = Number(line?.id);
       const text = String(line?.text || "").replace(/\s+/g, " ").trim().slice(0, 800);
+      const translation = String(line?.translation || "").replace(/\s+/g, " ").trim().slice(0, 1200);
       if (!Number.isInteger(id) || !text) throw new Error(`${label}第 ${index + 1} 条字幕无效`);
-      return { id, text };
+      return translation ? { id, text, translation } : { id, text };
     });
   };
 
@@ -120,6 +122,9 @@
       "你是专业字幕编辑器。处理原语言字幕，不要翻译。",
       `字幕语言：${language || "auto"}`,
       `任务：${tasks.join("；")}。`,
+      "每条数据中的 text 是原文，translation 是现有译文（可能为空，也可能包含机器翻译错误）。必须同时对照原文、译文和上下文进行语义消歧。",
+      "译文只能作为辅助证据，不能被当作绝对正确答案；禁止从译文反向编造原文。原文与译文冲突时，应结合前后文选择最保守、改动最小的原文修复。",
+      "最终 segments.text 只能输出修复后的原语言字幕，不得输出译文；旧译文会在修复后由当前翻译引擎重新生成。",
       "修复时必须结合整段上下文，尤其要参考后文来判断专有名词、同音误识别、代词指向、标点和句子边界；禁止把每条字幕当作互不相关的独立句子处理。",
       "修复优先级：忠实保留原意 > 最小字符改动 > 语法自然。上下文只用于消歧，不是让你自由改写。没有高置信度证据时必须保留原文。",
       "中文特别规则：不要因为连续汉字看起来像另一个词就擅自重新切词或替换同音字；不要凭空增加动作、宾语或主题。只有上下文明确支持时才可补漏字。",
@@ -315,7 +320,7 @@
 
     const language = String(message.language || "auto").slice(0, 40);
     const cacheKey = await digest(JSON.stringify({
-      version: 3,
+      version: 4,
       engine: engine._id,
       model: engine.model,
       language,
