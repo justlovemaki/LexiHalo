@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexiHalo 沉浸式翻译常开</title>
+  <link rel="stylesheet" href="assets/site-rules.css">
+</head>
+<body>
+  <main>
+    <header>
+      <img src="assets/logo.svg" alt="LexiHalo">
+      <div>
+        <h1>沉浸式翻译常开</h1>
+        <p>设置打开网页后自动开启沉浸式翻译的网站，也可直接在网页右键菜单中添加或移除。</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <h2>常开网站</h2>
+          <p>匹配的网页会在加载后自动开启沉浸式翻译。</p>
+        </div>
+        <button id="add-immersive-current" type="button" hidden>添加当前网站</button>
+      </div>
+      <div class="quick-add">
+        <input id="immersive-new-rule" type="text" spellcheck="false" placeholder="输入域名或规则，例如 example.com">
+        <button id="immersive-add" type="button">添加规则</button>
+      </div>
+      <div id="immersive-rule-list" class="rule-list"></div>
+      <details>
+        <summary>批量编辑高级规则</summary>
+        <textarea id="immersive-rules" spellcheck="false" placeholder="example.com&#10;*.example.com/articles/*"></textarea>
+      </details>
+    </section>
+
+    <section class="notice">
+      <strong>规则说明</strong>
+      <ul>
+        <li>可在上方快速添加，点击规则右侧的“删除”会立即移除；高级编辑支持每行一条规则。</li>
+        <li>高级编辑中的空行和以 <code>#</code> 开头的行会被忽略。</li>
+        <li><code>example.com</code> 匹配该域名；<code>*.example.com</code> 同时匹配子域名。</li>
+        <li>可附带路径并使用 <code>*</code>，例如 <code>*.example.com/video/*</code>。</li>
+        <li>也可指定协议，例如 <code>https://example.com/*</code>；未写路径时匹配整个网站。</li>
+        <li>保存后，已打开的网页也会自动应用新规则。</li>
+      </ul>
+    </section>
+
+    <div class="actions">
+      <button id="save" class="primary" type="button">保存批量修改</button>
+      <span id="status" role="status"></span>
+    </div>
+  </main>
+  <script src="assets/site-rules.js"></script>
+</body>
+</html>

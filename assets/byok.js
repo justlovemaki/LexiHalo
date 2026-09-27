@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "trancy_byok_engines";
+  const requestedProvider = new URLSearchParams(location.search).get("provider");
   const presets = {
     OpenAI: {
       runtimeProvider: "OpenAI",
@@ -33,6 +34,19 @@
       model: "claude-3-5-haiku-latest",
       endpoint: "https://api.anthropic.com/v1/messages"
     },
+    Microsoft: {
+      runtimeProvider: "MicrosoftTranslator",
+      name: "Microsoft Translator (Azure)",
+      model: "microsoft-translate",
+      endpoint: "https://api.cognitive.microsofttranslator.com/translate",
+      supportsRegion: true
+    },
+    DeepL: {
+      runtimeProvider: "DeepL",
+      name: "DeepL API",
+      model: "deepl-translate",
+      endpoint: "https://api-free.deepl.com/v2/translate"
+    },
     Custom: {
       runtimeProvider: "OpenAI",
       name: "Custom AI",
@@ -48,6 +62,8 @@
   const modelInput = $("model");
   const endpointInput = $("endpoint");
   const keyInput = $("key");
+  const regionInput = $("region");
+  const regionLabel = $("region-label");
   const idInput = $("engine-id");
   const list = $("engine-list");
   const empty = $("empty");
@@ -62,7 +78,7 @@
 
   const persist = async () => {
     await chrome.storage.local.set({ [STORAGE_KEY]: engines });
-    status.textContent = "已保存，请刷新使用 LexiHalo 的网页";
+    status.textContent = "已保存，重新打开翻译引擎列表即可选择";
     window.setTimeout(() => { status.textContent = ""; }, 3000);
   };
 
@@ -75,7 +91,7 @@
   const resetForm = () => {
     form.reset();
     idInput.value = "";
-    $("form-title").textContent = "添加模型";
+    $("form-title").textContent = "添加翻译引擎";
     cancelEdit.hidden = true;
     applyPreset(true);
   };
@@ -86,6 +102,8 @@
     if (force || !nameInput.value) nameInput.value = preset.name;
     if (force || !modelInput.value) modelInput.value = preset.model;
     if (force || !endpointInput.value) endpointInput.value = preset.endpoint;
+    regionLabel.hidden = !preset.supportsRegion;
+    if (!preset.supportsRegion) regionInput.value = "";
   };
 
   const createButton = (text, className, handler) => {
@@ -111,7 +129,7 @@
       title.textContent = engine.name;
       const meta = document.createElement("div");
       meta.className = "engine-meta";
-      meta.textContent = `${engine.providerLabel || engine.provider} · ${engine.model} · ${maskKey(engine.key)} · ${engine.endpoint}`;
+      meta.textContent = `${engine.providerLabel || engine.provider} · ${engine.model} · ${maskKey(engine.key)}${engine.region ? ` · ${engine.region}` : ""} · ${engine.endpoint}`;
       info.append(title, meta);
 
       const actions = document.createElement("div");
@@ -135,7 +153,9 @@
     modelInput.value = engine.model;
     endpointInput.value = engine.endpoint;
     keyInput.value = engine.key;
-    $("form-title").textContent = "编辑模型";
+    regionInput.value = engine.region || "";
+    regionLabel.hidden = !(presets[provider.value]?.supportsRegion);
+    $("form-title").textContent = "编辑翻译引擎";
     cancelEdit.hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -165,6 +185,7 @@
       model: modelInput.value.trim(),
       endpoint: endpointInput.value.trim(),
       key: keyInput.value.trim(),
+      region: regionInput.value.trim(),
       type: "user",
       role: 2,
       enabled: true,
@@ -185,6 +206,10 @@
     engines = stored;
     render();
     resetForm();
+    if (requestedProvider && presets[requestedProvider]) {
+      provider.value = requestedProvider;
+      applyPreset(true);
+    }
   }).catch(error => {
     status.textContent = `读取配置失败：${error.message || error}`;
   });

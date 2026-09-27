@@ -1,6 +1,6 @@
 # LexiHalo 外部链接与网络请求审计
 
-版本：8.1.1
+版本：8.2.0
 
 > LexiHalo 独立版状态：文中出现的 `*.trancy.org` 仅作为原上游域名审计记录，不再代表当前产品名称。相关推广、帮助、遥测和回访地址可能仍以不可达遗留字符串存在于压缩包中，但运行时已统一阻断；Google Analytics 已停用，安装/卸载回访已删除，弹窗和扩展 UI 不再打开这些地址。保留的网络能力仅用于 BYOK/第三方翻译服务以及视频站自身的字幕和媒体请求。
 
@@ -71,8 +71,8 @@
 - 火山方舟：`ark.cn-beijing.volces.com`
 - DeepL：`api.deepl.com`、`api-free.deepl.com`
 - Google Translate：`translate.googleapis.com`
-- Microsoft Translator：`api-edge.cognitive.microsofttranslator.com`
-- Microsoft Token：`edge.microsoft.com`
+- Microsoft Translator（官方 Azure API）：`api.cognitive.microsofttranslator.com`
+- Microsoft Edge 匿名接口（仅保留兼容代码，不在界面提供）：`api-edge.cognitive.microsofttranslator.com`、`edge.microsoft.com`
 
 本地 BYOK 还允许用户填写任意自定义 Endpoint，所以该列表不是封闭白名单。
 

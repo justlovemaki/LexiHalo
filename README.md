@@ -8,7 +8,8 @@ LexiHalo 是一个以本地独立运行和 BYOK 为核心的 AI 翻译、网页�
 - 点击字幕单词打开 AI 详解
 - Web Dictionary 与美式/英式发音切换
 - 网页划词翻译、快速翻译和沉浸式全文翻译
-- 支持 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 及 OpenAI 兼容接口
+- 沉浸式翻译可按网站自动开启
+- 支持 Google 翻译、Microsoft Translator（Azure）、DeepL，以及 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 和 OpenAI 兼容接口
 - API Key 仅保存在 `chrome.storage.local`
 - 不依赖原上游账号、会员系统或云端额度
 
@@ -22,7 +23,11 @@ LexiHalo 是一个以本地独立运行和 BYOK 为核心的 AI 翻译、网页�
 
 ## 配置 BYOK
 
-在扩展管理页面打开 LexiHalo 的“扩展程序选项”，添加模型服务商、Endpoint、模型名称和 API Key。保存后刷新正在使用扩展的网页。
+在扩展管理页面打开 LexiHalo 的“扩展程序选项”，可添加 AI 模型、Microsoft Translator（Azure）或 DeepL。Microsoft 使用官方 Azure Translator API Key，并可选填 Region；DeepL 支持 Free/Pro API Endpoint。未配置时，两者也会显示在侧边栏和视频字幕的翻译引擎列表中，点击即可进入对应配置；API Key 仅保存在本机。
+
+## 配置沉浸式翻译常开网站
+
+在任意网页点击右键，可直接选择“将当前网站加入沉浸翻译常开”或“将当前网站移出沉浸翻译常开”。也可以打开 LexiHalo 设置，进入“沉浸翻译常开”管理规则；页面支持一键添加/移除当前网站、回车快速添加规则和单条删除；批量编辑中还可维护域名（`example.com`）、子域通配符（`*.example.com`）、路径通配符（`*.example.com/video/*`）及完整 URL。修改会立即应用到已打开的网页，并在单页应用切换地址时重新匹配。双语字幕继续使用 LexiHalo 原有的常开设置。
 
 ## 支持范围
 

@@ -6,7 +6,7 @@
 
 - 新名称：`LexiHalo - AI 翻译与双语字幕`
 - 扩展图标、页面 Logo、弹窗品牌和全部本地化名称已替换为 LexiHalo。
-- 当前版本号：`8.1.1`
+- 当前版本号：`8.2.0`
 - 用户可见名称中已清除旧品牌；源码中保留的小写 `trancy-*` CSS 类、事件名、存储键、引擎类型和历史域名仅用于兼容现有构建结构，不作为品牌展示。
 
 ## 已完成的客户端改造
@@ -33,7 +33,8 @@
 - Trusted Types 兼容逻辑会优先复用页面已有的默认策略，或仅创建 CSP 允许的 `default` 策略，不再尝试创建被 YouTube 等网站 CSP 禁止的自定义策略名。
 - 词书切换的客户端会员判断已移除。
 - 高级翻译引擎在客户端统一标记为可选，`AIEngineAvailable` 默认开启。
-- 新增本地 BYOK 配置页 `byok.html`，支持 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 和 OpenAI 兼容接口。
+- 新增“沉浸翻译常开”设置页，用于维护沉浸式翻译的 URL/域名规则；支持精确域名、`*.` 子域通配符和路径 `*`，可通过网页右键菜单直接添加/移除当前网站，也可在管理页一键操作、回车添加及逐条删除。修改会实时应用，并在 SPA 地址切换时重新匹配；双语字幕继续使用原有常开设置。
+- 新增本地 BYOK 配置页 `byok.html`，支持 Microsoft Translator 官方 Azure API、DeepL Free/Pro，以及 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 和 OpenAI 兼容接口。由于 Edge 匿名翻译 token 端点目前会返回 404，微软翻译采用用户自己的 Azure API Key，不伪装成可用的免密服务。
 - 翻译引擎设置入口已改为打开本地 BYOK 页面，不再依赖 `learn.trancy.org/advanced-ai`。
 - BYOK 配置保存在 `chrome.storage.local`；引擎列表返回页面时会移除 API Key，真正翻译时仅由后台补回密钥。
 - 即使 `/2/translator/engines` 不可用，只要本地配置了 BYOK，扩展仍会返回本地引擎。
@@ -42,6 +43,7 @@
 - 会员标识改为 `Free Access`，账号页不再显示升级入口。
 - Premium 路由已从阅读器路由表中移除。
 - 修复 `getStateChunks({ exclude: [...] })` 返回键名数组的问题。
+- 修复按需状态缺少 `edreader` 时切换字幕语言写入 `areaPhonetic` 崩溃的问题；后台向扩展设置页等无内容脚本的标签页发送消息时会安静跳过，不再产生连接失败和未处理 Promise 错误。
 
 ## 8.0.0 独立版改造
 

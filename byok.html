@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LexiHalo BYOK AI 翻译</title>
+  <title>LexiHalo 自定义翻译引擎</title>
   <link rel="stylesheet" href="assets/byok.css">
 </head>
 <body>
@@ -11,17 +11,17 @@
     <header>
       <img src="assets/logo.svg" alt="LexiHalo">
       <div>
-        <h1>LexiHalo BYOK AI 翻译</h1>
-        <p>使用你自己的模型 API Key，翻译请求由扩展直接发送给模型服务商。</p>
+        <h1>LexiHalo 自定义翻译引擎</h1>
+        <p>配置 AI 模型或 DeepL API，翻译请求由扩展直接发送给对应服务商。</p>
       </div>
     </header>
 
     <section class="notice">
-      API Key 保存在本机的 <code>chrome.storage.local</code> 中，不会上传到 LexiHalo 或其他中间服务器。请勿在共享电脑上保存密钥。
+      API Key 保存在本机的 <code>chrome.storage.local</code> 中，不会上传到 LexiHalo 或其他中间服务器。Google 翻译无需密钥；Microsoft Translator 使用官方 Azure API Key，DeepL 可填写 Free 或 Pro API Key。请勿在共享电脑上保存密钥。
     </section>
 
     <section class="card">
-      <h2 id="form-title">添加模型</h2>
+      <h2 id="form-title">添加翻译引擎</h2>
       <form id="engine-form">
         <input id="engine-id" type="hidden">
         <div class="grid">
@@ -32,6 +32,8 @@
               <option value="DeepSeek">DeepSeek</option>
               <option value="Google">Google Gemini</option>
               <option value="Anthropic">Anthropic Claude</option>
+              <option value="Microsoft">Microsoft Translator (Azure)</option>
+              <option value="DeepL">DeepL API</option>
               <option value="Custom">OpenAI 兼容接口</option>
             </select>
           </label>
@@ -47,9 +49,12 @@
           <label class="wide">API Key
             <input id="key" type="password" required autocomplete="off" placeholder="仅保存在本机">
           </label>
+          <label id="region-label" class="wide" hidden>Azure Region（可选）
+            <input id="region" autocomplete="off" placeholder="例如 eastasia；单服务 Translator 资源通常可留空">
+          </label>
         </div>
         <div class="actions">
-          <button type="submit" class="primary">保存模型</button>
+          <button type="submit" class="primary">保存引擎</button>
           <button type="button" id="cancel-edit" hidden>取消编辑</button>
         </div>
       </form>
@@ -57,15 +62,15 @@
 
     <section class="card">
       <div class="section-heading">
-        <h2>已配置模型</h2>
+        <h2>已配置引擎</h2>
         <span id="status"></span>
       </div>
-      <div id="empty">尚未配置 BYOK 模型。</div>
+      <div id="empty">尚未配置自定义翻译引擎。</div>
       <div id="engine-list"></div>
     </section>
 
     <section class="footer-note">
-      保存后请刷新正在使用 LexiHalo 的网页，然后在“翻译引擎 → 自定义引擎”中选择该模型。
+      保存后在“翻译引擎”中选择对应服务。Microsoft 多服务资源需填写 Azure Region；DeepL Free 默认使用 <code>api-free.deepl.com</code>；Pro 用户请将 Endpoint 改为 <code>https://api.deepl.com/v2/translate</code>。
     </section>
   </main>
   <script src="assets/byok.js"></script>

@@ -1,5 +1,5 @@
 {
-  "version": "8.1.1",
+  "version": "8.2.0",
   "name": "__MSG_PKG_NAME__",
   "manifest_version": 3,
   "description": "__MSG_PKG_DESC__",
@@ -57,6 +57,7 @@
     {
       "matches": ["http://*/*", "https://*/*", "file://*/*"],
       "js": [
+        "assets/site-rules-loader.js",
         "assets/tagger-main.js",
         "assets/ld-main.js",
         "assets/edreader-main.js"
