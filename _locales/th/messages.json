@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - ผู้แปล AI & คำบรรยายสองภาษา"
+  },
+  "PKG_DESC": {
+    "message": "LexiHalo ให้บริการคำบรรยายสองภาษาสำหรับแพลตฟอร์มเช่น YouTube, Disney+ รวมถึงเครื่องแปลภาษา AI สำหรับเว็บไซต์"
+  },
+  "toggleVideoImmersive": {
+    "message": "โหมดการเรียนรู้วิดีโอ_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "การแปลแบบดื่มด่ำ_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "เครื่องแปลอย่างรวดเร็ว_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "การถอดเสียงด้วย AI ของ Youtube_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "คำบรรยายสองภาษา_LexiHalo"
+  }
+}

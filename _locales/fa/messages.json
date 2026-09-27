@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - مترجم هوش مصنوعی و زیرنویس دو زبانه"
+  },
+  "PKG_DESC": {
+    "message": "LexiHalo زیرنویس دوزبانه برای پلتفرم‌هایی مانند YouTube، Disney+ و همچنین مترجم هوش مصنوعی برای وب‌سایت‌ها ارائه می‌دهد."
+  },
+  "toggleVideoImmersive": {
+    "message": "حالت یادگیری ویدیو_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "ترجمه فراگیر_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "مترجم سریع_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "رونویسی هوش مصنوعی یوتیوب_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "زیرنویس دوزبانه_LexiHalo"
+  }
+}

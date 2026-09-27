@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - ИИ переводчик и двуязычные субтитры"
+  },
+  "PKG_DESC": {
+    "message": "LexiHalo предоставляет двуязычные субтитры для платформ, таких как YouTube, Disney+, TED, edX, Kehan, Coursera... а также ИИ-переводчик для веб-сайтов."
+  },
+  "toggleVideoImmersive": {
+    "message": "Режим обучения видео_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "Погружной перевод_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "Быстрый перевод_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "Youtube AI Субтитры_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "Двуязычные субтитры_LexiHalo"
+  }
+}

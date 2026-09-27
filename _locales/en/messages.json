@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - AI Translator & Dual Subtitles"
+  },
+  "PKG_DESC": {
+    "message": "LexiHalo provides bilingual subtitle for platforms like YouTube, Disney+, as well as AI translator for websites."
+  },
+  "toggleVideoImmersive": {
+    "message": "Video Learning Mode_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "Immersive Translate_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "Quick Translator_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "Youtube AI Transcription_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "Bilingual Subtitles_LexiHalo"
+  }
+}

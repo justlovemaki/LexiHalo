@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - Yapay Zekâ Çevirmen & Çift Dilli Altyazılar"
+  },
+  "PKG_DESC": {
+    "message": "LexiHalo, YouTube, Disney+, TED, edX, Kehan, Coursera gibi platformlar için çift dilli altyazı sağlar ve aynı zamanda web siteleri için yapay zeka çevirmeni sunar."
+  },
+  "toggleVideoImmersive": {
+    "message": "Video öğrenme modu_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "Tam sayfa çeviri_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "Hızlı çeviri_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "Youtube AI Altyazıları_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "Çift dilli altyazılar_LexiHalo"
+  }
+}

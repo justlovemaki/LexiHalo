@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - Tradutor de IA & Legendas bilíngues"
+  },
+  "PKG_DESC": {
+    "message": "O LexiHalo fornece legendas bilíngues para plataformas como YouTube, Disney+, TED, edX, Kehan, Coursera... além de tradução de IA para sites."
+  },
+  "toggleVideoImmersive": {
+    "message": "Modo de aprendizagem de vídeo_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "Tradução imersiva_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "Tradução rápida_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "Legendas de IA de Youtube_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "Legendas bilíngues_LexiHalo"
+  }
+}

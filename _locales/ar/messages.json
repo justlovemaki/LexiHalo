@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - مترجم بالذكاء الاصطناعي وترجمة مزدوجة"
+  },
+  "PKG_DESC": {
+    "message": "ترانسي يوفر ترجمة ثنائية اللغة لمنصات مثل يوتيوب وديزني بلس وتيد وإيديكس وكورسيرا... بالإضافة إلى مترجم ذكي للمواقع."
+  },
+  "toggleVideoImmersive": {
+    "message": "تفعيل/تعطيل وضع التعلم بالفيديو [LexiHalo]"
+  },
+  "toggleFulltextImmersive": {
+    "message": "تفعيل/تعطيل الترجمة المغمورة [LexiHalo]"
+  },
+  "quickTranslator": {
+    "message": "تفعيل/تعطيل الترجمة السريعة [LexiHalo]"
+  },
+  "aiTranscribe": {
+    "message": "تفعيل/تعطيل ترجمة الفيديو باللغة العربية [LexiHalo]"
+  },
+  "captionToggle": {
+    "message": "تفعيل/تعطيل الترجمة المتعددة اللغات [LexiHalo]"
+  }
+}

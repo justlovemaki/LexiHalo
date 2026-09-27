@@ -1,0 +1,23 @@
+{
+  "PKG_NAME": {
+    "message": "LexiHalo - Traducteur IA & Sous-titres bilingues"
+  },
+  "PKG_DESC": {
+    "message": "LexiHalo fournit des sous-titres bilingues pour des plateformes telles que YouTube, Disney+, TED, edX, Kehan, Coursera... ainsi qu'un traducteur IA pour les sites web."
+  },
+  "toggleVideoImmersive": {
+    "message": "Mode de lecture vidéo_LexiHalo"
+  },
+  "toggleFulltextImmersive": {
+    "message": "Traduire en immersion_LexiHalo"
+  },
+  "quickTranslator": {
+    "message": "Traduire en immersion_LexiHalo"
+  },
+  "aiTranscribe": {
+    "message": "Sous-titres IA de Youtube_LexiHalo"
+  },
+  "captionToggle": {
+    "message": "Sous-titres bilingues_LexiHalo"
+  }
+}
