@@ -5,15 +5,15 @@
   const FEATURES = {
     immersive: {
       attribute: "data-lexihalo-immersive-always",
-      event: "lexihalo:immersive-enable"
-    }
+      event: "lexihalo:immersive-enable",
+    },
   };
 
   let rules = {};
   let lastUrl = location.href;
   let applyGeneration = 0;
 
-  const escapeRegExp = value => value.replace(/[|\\{}()[\]^$+?.]/g, "\\$&");
+  const escapeRegExp = (value) => value.replace(/[|\\{}()[\]^$+?.]/g, "\\$&");
 
   const matchesRule = (value, url) => {
     let rule = String(value || "").trim();
@@ -38,8 +38,9 @@
         .toLowerCase();
       const pathPattern = slash >= 0 ? rule.slice(slash) : "/*";
       const hostname = current.hostname.replace(/\.$/, "").toLowerCase();
-      const hostMatches = hostPattern === "*"
-        || (hostPattern.startsWith("*.")
+      const hostMatches =
+        hostPattern === "*" ||
+        (hostPattern.startsWith("*.")
           ? hostname === hostPattern.slice(2) || hostname.endsWith(hostPattern.slice(1))
           : hostname === hostPattern);
 
@@ -52,10 +53,11 @@
   };
 
   const featureMatches = (feature, url) =>
-    Array.isArray(rules?.[feature]) && rules[feature].some(rule => matchesRule(rule, url));
+    Array.isArray(rules?.[feature]) && rules[feature].some((rule) => matchesRule(rule, url));
 
   const dispatchEnable = (feature, url, generation) => {
-    if (generation !== applyGeneration || location.href !== url || !featureMatches(feature, url)) return;
+    if (generation !== applyGeneration || location.href !== url || !featureMatches(feature, url))
+      return;
     window.dispatchEvent(new CustomEvent(FEATURES[feature].event));
   };
 
@@ -70,7 +72,8 @@
 
     for (const [feature, config] of Object.entries(FEATURES)) {
       const matched = featureMatches(feature, url);
-      document.documentElement.toggleAttribute(config.attribute, matched);
+      if (matched) document.documentElement.setAttribute(config.attribute, "1");
+      else document.documentElement.removeAttribute(config.attribute);
       if (matched) dispatchEnable(feature, url, generation);
     }
 
@@ -90,8 +93,9 @@
     applyRules({ retry: true });
   };
 
-  chrome.storage.local.get(STORAGE_KEY)
-    .then(result => {
+  chrome.storage.local
+    .get(STORAGE_KEY)
+    .then((result) => {
       rules = result[STORAGE_KEY] || {};
       lastUrl = location.href;
       applyRules({ retry: true });

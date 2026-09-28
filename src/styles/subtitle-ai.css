@@ -1,0 +1,5 @@
+/* LexiHalo Subtitle & Translation Scoped Cache Styles */
+.right-link[data-lexihalo-cache-scope] {
+  cursor: pointer;
+  user-select: none;
+}

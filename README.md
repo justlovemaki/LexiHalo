@@ -28,7 +28,9 @@ LexiHalo 是一个以本地独立运行和 BYOK 为核心的 AI 翻译、网页�
 
 ## 配置 AI 字幕翻译与修复
 
-在 BYOK 页面配置 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 或 OpenAI 兼容接口。在视频字幕中选择该 AI 引擎作为字幕翻译引擎时，系统会在翻译流程中自动结合上下文消歧修复 ASR 错词，并同时返回修复后的原文与准确译文，主副字幕直接同步呈现，无需手动开启额外开关。选择 Google / 微软等机器翻译引擎时，保持原始字幕不修改。缓存按功能分别清理：在“双语字幕”页可清理“字幕翻译缓存”；“沉浸式翻译”页提供沉浸式翻译缓存清理；“划词翻译”页提供划词翻译缓存清理；“翻译引擎”页提供快速翻译缓存清理。清理字幕缓存会重新载入当前原字幕；已渲染的沉浸式翻译内容需刷新页面后重新获取。
+在 BYOK 页面配置 OpenAI、OpenRouter、DeepSeek、Gemini、Claude 或 OpenAI 兼容接口。在视频字幕中选择该 AI 引擎作为字幕翻译引擎时，系统会用一次模型请求同时完成上下文消歧、ASR 保守修复和翻译，主副字幕同步呈现。首批优先处理当前 3 行，后续使用稳定 6 行窗口并最多并发 2 个请求；跳转播放位置会取消旧请求。组合响应缺行时仅对缺失行执行同模型普通翻译，必要时再使用机器翻译兜底，避免整批字幕失败。选择 Google / 微软等机器翻译引擎时，保持原始字幕不修改。
+
+“双语字幕”页提供“重新载入当前字幕”和“彻底清除 AI 字幕缓存”：前者保留持久 AI 结果并恢复原字幕，不重新下载字幕轨道；后者会强制下次重新调用模型。沉浸式翻译、划词翻译和快速翻译继续使用各自独立缓存。完整流程见 [`docs/AI_SUBTITLES.md`](docs/AI_SUBTITLES.md)。
 
 ## 配置沉浸式翻译常开网站
 
@@ -42,4 +44,20 @@ LexiHalo 是一个以本地独立运行和 BYOK 为核心的 AI 翻译、网页�
 
 本项目基于压缩后的浏览器扩展构建产物改造，不包含原始前端或后端源码。原上游账号、云端收藏、托管 AI 字幕、托管 AI 总结、托管高级引擎和云端 TTS 等功能已停用或从界面移除。
 
-详细改造记录见 [`FREE_ACCESS.md`](FREE_ACCESS.md)，网络与历史域名审计见 [`EXTERNAL_LINKS.md`](EXTERNAL_LINKS.md)。
+详细改造记录见 [`docs/FREE_ACCESS.md`](docs/FREE_ACCESS.md)，网络与历史域名审计见 [`docs/EXTERNAL_LINKS.md`](docs/EXTERNAL_LINKS.md)。
+
+## 项目结构
+
+- `src/`：主要可维护源码和样式；Reader 页面/卡片/设置位于 `src/reader/`，Video UI 位于 `src/video/ui/`，Popup UI 位于 `src/popup/ui/`，HTML 模板位于 `src/pages/`，界面文案位于 `src/locales/`。
+- `config/`：构建基线及高置信度符号配置。
+- `vendor/legacy/`：从原扩展保留的稳定 Bundle 基线。
+- `assets/`：浏览器实际加载的构建结果；仓库根目录可直接作为未打包扩展加载。
+- `tools/`：恢复、构建、检查和浏览器回归脚本。
+- `docs/`：架构、改造与审计文档。
+- `artifacts/`、`recovered/`、`src-recovered/`：可再生报告和恢复分析结果，不纳入 Git。
+
+## 构建与恢复
+
+扩展现在直接运行格式化后的单 Bundle：`assets/background.js`、`assets/edreader-main.js`、`assets/edvideo-main.js`、`assets/popup.js` 及三个语言工具 Bundle。构建器以 `vendor/legacy/` 和 `src/` 为输入，使用 AST 作用域绑定进行高置信度语义命名；第三方库、Webpack/Babel 辅助函数、国际化文本、SVG 与词典数据保持原名。
+
+执行 `npm run build` 可重复生成运行文件，`npm run test:browser` 运行 Chromium 回归，`npm run check` 验证语法、行为标记、重命名映射及构建确定性。恢复分析结果可通过 `npm run recover` 重新生成。构建和测试报告写入被忽略的 `artifacts/reports/`。完整说明见 [`docs/READABLE_BUNDLES.md`](docs/READABLE_BUNDLES.md)。由于上游没有 source map，无法证明性恢复原文件名、注释、类型或全部局部变量名。

@@ -1,0 +1,21 @@
+{
+  "name": "lexihalo",
+  "version": "8.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "recover": "node tools/recover-webpack.cjs && node tools/recover-semantics.cjs && prettier --write \"recovered/**/*.{js,json,md}\" \"src-recovered/**/*.{js,css,json,md}\"",
+    "build": "node tools/build-readable-bundles.mjs",
+    "test:browser": "node tools/test-readable-bundles.mjs",
+    "check:recovered": "node tools/check-recovered.cjs",
+    "check": "npm run build && node tools/check-readable-bundles.mjs"
+  },
+  "devDependencies": {
+    "@babel/generator": "7.27.0",
+    "@babel/parser": "7.27.0",
+    "@babel/traverse": "7.27.0",
+    "@babel/types": "7.27.0",
+    "playwright-core": "1.52.0",
+    "prettier": "3.5.3"
+  }
+}

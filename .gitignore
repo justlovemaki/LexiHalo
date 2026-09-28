@@ -1,4 +1,34 @@
+# Local agent state
 .pi/
+
+# Dependencies and package-manager caches
+node_modules/
+.npm/
+.pnpm-store/
+
+# Local environment files (keep templates tracked)
+.env
+.env.*
+!.env.example
+
+# Generated recovery, analysis, and test artifacts
+artifacts/
+recovered/
+src-recovered/
+coverage/
+
+# Browser extension packaging artifacts
+web-ext-artifacts/
+*.crx
+*.pem
+
+# Editor and OS metadata
+.idea/
+.vscode/
 .DS_Store
 Thumbs.db
+
+# Logs and temporary files
 *.log
+*.tmp
+*.swp

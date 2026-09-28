@@ -1,0 +1,15 @@
+{
+  "description": "High-confidence semantic rename candidates for the popup bundle",
+  "highConfidenceRenames": {
+    "n": "jsxRuntime",
+    "a": "React",
+    "o": "ReactDOMClient",
+    "T": "RESTRICTED_URL_PATTERNS",
+    "k": "detectUiLanguage",
+    "S": "openExtensionPage",
+    "w": "PopupApp",
+    "C": "popupRoot",
+    "y": "translations",
+    "u": "englishTranslations"
+  }
+}

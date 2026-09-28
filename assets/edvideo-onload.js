@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const forwardHotkey = event => {
+  const forwardHotkey = (event) => {
     event.preventDefault();
     event.stopPropagation();
     const detail = {
@@ -13,42 +13,55 @@
       altKey: event.altKey,
       metaKey: event.metaKey,
       isComposing: event.isComposing,
-      repeat: event.repeat
+      repeat: event.repeat,
     };
-    window.postMessage({
-      to: "background",
-      from: "content",
-      detail,
-      eventName: "hotkey"
-    }, "*");
+    window.postMessage(
+      {
+        to: "background",
+        from: "content",
+        detail,
+        eventName: "hotkey",
+      },
+      "*",
+    );
   };
 
-  window.addEventListener("message", async event => {
+  window.addEventListener("message", async (event) => {
     if (event.source !== window || !event.data) return;
     const { eventName, ...message } = event.data;
     switch (eventName) {
       case "lexihalo:subtitle-ai-request": {
         const { requestId, type, payload } = message;
-        if (!requestId || typeof type !== "string" || !type.startsWith("lexihalo:subtitle-ai:")) break;
+        if (!requestId || typeof type !== "string" || !type.startsWith("lexihalo:subtitle-ai:"))
+          break;
         let port;
         let settled = false;
-        const reply = response => {
+        const reply = (response) => {
           if (settled) return;
           settled = true;
-          try { port?.disconnect(); } catch {}
-          window.postMessage({
-            eventName: "lexihalo:subtitle-ai-response",
-            requestId,
-            response
-          }, "*");
+          try {
+            port?.disconnect();
+          } catch {}
+          window.postMessage(
+            {
+              eventName: "lexihalo:subtitle-ai-response",
+              requestId,
+              response,
+            },
+            "*",
+          );
         };
         try {
           port = chrome.runtime.connect({ name: "lexihalo-subtitle-ai" });
-          port.onMessage.addListener(result => {
+          port.onMessage.addListener((result) => {
             if (result?.requestId === requestId) reply(result.response);
           });
           port.onDisconnect.addListener(() => {
-            if (!settled) reply({ ok: false, error: chrome.runtime.lastError?.message || "AI subtitle connection closed" });
+            if (!settled)
+              reply({
+                ok: false,
+                error: chrome.runtime.lastError?.message || "AI subtitle connection closed",
+              });
           });
           port.postMessage({ requestId, type, ...(payload || {}) });
         } catch (error) {
@@ -74,54 +87,17 @@
     }
   });
 
-  chrome.runtime.onMessage.addListener(message => {
+  chrome.runtime.onMessage.addListener((message) => {
     const { to, from, response } = message;
-    if ((Array.isArray(to) && to.includes("content")) ||
-        to === "content" ||
-        (from === "content" && response)) {
+    if (
+      (Array.isArray(to) && to.includes("content")) ||
+      to === "content" ||
+      (from === "content" && response)
+    ) {
       window.postMessage({ ...message, eventName: "message:content" }, "*");
     }
     return true;
   });
 
-  const trustedTypes = window.trustedTypes;
-  const trustedPolicy = (() => {
-    if (!trustedTypes) return { createScriptURL: value => value };
-    if (trustedTypes.defaultPolicy) return trustedTypes.defaultPolicy;
-    try {
-      return trustedTypes.createPolicy("default", {
-        createScriptURL: value => value
-      });
-    } catch {
-      return { createScriptURL: value => value };
-    }
-  })();
-
-  const inject = asset => {
-    try {
-      const script = document.createElement("script");
-      script.src = trustedPolicy.createScriptURL(chrome.runtime.getURL(asset));
-      script.type = "module";
-      document.documentElement.prepend(script);
-    } catch (error) {
-      console.error("[LexiHalo] Failed to inject video runtime", error);
-    }
-  };
-
-  const boot = () => {
-    inject("assets/edvideo-main.js");
-    inject("assets/romanize-main.js");
-    inject("assets/ld-main.js");
-  };
-
-  if (document.documentElement) {
-    boot();
-  } else {
-    const observer = new MutationObserver(() => {
-      if (!document.documentElement) return;
-      observer.disconnect();
-      boot();
-    });
-    observer.observe(document, { childList: true });
-  }
+  document.documentElement?.setAttribute("data-lexihalo-video-bridge-runtime", "readable");
 })();

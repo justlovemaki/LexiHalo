@@ -1,0 +1,214 @@
+/**
+ * Semantic recovery of a scope-hoisted bundle function.
+ */
+export function recoverLoginPage(dependencies) {
+  const Cp = dependencies.Cp;
+  const Hi = dependencies.Hi;
+  const React = dependencies.React;
+  const Sa = dependencies.Sa;
+  const Ta = dependencies.Ta;
+  const Vi = dependencies.Vi;
+  const Vn = dependencies.Vn;
+  const classNames = dependencies.classNames;
+  const extensionClient = dependencies.extensionClient;
+  const jsxRuntime = dependencies.jsxRuntime;
+  const kp = dependencies.kp;
+  const useApiClient = dependencies.useApiClient;
+  const useDispatchBridge = dependencies.useDispatchBridge;
+  const useLocale = dependencies.useLocale;
+  const useSliderNavigation = dependencies.useSliderNavigation;
+  const useToast = dependencies.useToast;
+
+  const LoginPage = (props) => {
+    const t = useApiClient(!0),
+      { locale: n } = useLocale(),
+      { navigate: r } = useSliderNavigation(),
+      [i, a] = (0, React.useState)(""),
+      [o, s] = (0, React.useState)(""),
+      [l, c] = (0, React.useState)(!1),
+      { dispatch: u } = useDispatchBridge(),
+      { toast: d, Toast: _ } = useToast(),
+      p = () => {
+        return (
+          (e = null),
+          (a = null),
+          (s = function* () {
+            if (!i || !o) return d.error(n("accountToastError"));
+            if (l) return;
+            c(!0);
+            const { data: e, message: a } = yield t.login(i, o);
+            if ("ok" !== a) return c(!1), d.error(a);
+            (null == e ? void 0 : e.token) &&
+              (yield u(Vn(e), !0),
+              extensionClient.track({
+                name: "login",
+              }),
+              r("/?first=true"));
+          }),
+          new Promise((t, n) => {
+            var r = (e) => {
+                try {
+                  o(s.next(e));
+                } catch (e) {
+                  n(e);
+                }
+              },
+              i = (e) => {
+                try {
+                  o(s.throw(e));
+                } catch (e) {
+                  n(e);
+                }
+              },
+              o = (e) =>
+                e.done ? t(e.value) : Promise.resolve(e.value).then(r, i);
+            o((s = s.apply(e, a)).next());
+          })
+        );
+        var e, a, s;
+      };
+    return (
+      (0, React.useEffect)(
+        () => (
+          window.dispatchEvent(new CustomEvent("edvideo:uninstallHotKey")),
+          () => {
+            window.dispatchEvent(new CustomEvent("edvideo:installHotKey"));
+          }
+        ),
+        [],
+      ),
+      (0, jsxRuntime.jsxs)("div", {
+        className: "rd-slider-inside",
+        id: "trancy-slider",
+        children: [
+          (0, jsxRuntime.jsx)(_, {}),
+          (0, jsxRuntime.jsx)("div", {
+            className: "rd-slider-nav",
+            children: (0, jsxRuntime.jsxs)("div", {
+              className: "nav-left",
+              onClick: () => r(-1),
+              children: [
+                (0, jsxRuntime.jsx)("div", {
+                  className: "btn-slider-back",
+                  children: (0, jsxRuntime.jsx)("div", {
+                    className: "t-icon icon-18",
+                    children:
+                      extensionClient.history < 1
+                        ? (0, jsxRuntime.jsx)(Sa, {})
+                        : (0, jsxRuntime.jsx)(Ta, {}),
+                  }),
+                }),
+                (0, jsxRuntime.jsxs)("span", {
+                  children: [" ", n("rd_sentence_ai_back")],
+                }),
+              ],
+            }),
+          }),
+          (0, jsxRuntime.jsxs)("div", {
+            className: "form-container",
+            children: [
+              (0, jsxRuntime.jsxs)("div", {
+                className: "account-tips",
+                children: [
+                  (0, jsxRuntime.jsx)("div", {
+                    className: "title",
+                    children: n("accountLoginTitle"),
+                  }),
+                  (0, jsxRuntime.jsx)("p", {
+                    className: "des",
+                    children: n("accountLoignTips"),
+                  }),
+                ],
+              }),
+              (0, jsxRuntime.jsxs)("div", {
+                className: "trancy-form",
+                onKeyDown: (e) => {
+                  e.stopPropagation(), "Enter" === e.code && p();
+                },
+                children: [
+                  (0, jsxRuntime.jsx)(kp, {}),
+                  (0, jsxRuntime.jsx)(Cp, {}),
+                  (0, jsxRuntime.jsxs)("div", {
+                    className: "input-group",
+                    children: [
+                      (0, jsxRuntime.jsx)("div", {
+                        className: "icon-label",
+                        children: (0, jsxRuntime.jsx)("div", {
+                          className: "t-icon icon-18",
+                          children: (0, jsxRuntime.jsx)(Hi, {}),
+                        }),
+                      }),
+                      (0, jsxRuntime.jsx)("input", {
+                        type: "text",
+                        placeholder: n("accountEmail"),
+                        value: i,
+                        onChange: (e) => a(e.target.value),
+                      }),
+                    ],
+                  }),
+                  (0, jsxRuntime.jsxs)("div", {
+                    className: "input-group",
+                    children: [
+                      (0, jsxRuntime.jsx)("div", {
+                        className: "icon-label",
+                        children: (0, jsxRuntime.jsx)("div", {
+                          className: "t-icon icon-18",
+                          children: (0, jsxRuntime.jsx)(Vi, {}),
+                        }),
+                      }),
+                      (0, jsxRuntime.jsx)("input", {
+                        type: "password",
+                        placeholder: n("accountPassword"),
+                        value: o,
+                        onChange: (e) => s(e.target.value),
+                      }),
+                    ],
+                  }),
+                  (0, jsxRuntime.jsxs)("div", {
+                    className: classNames()("trancy-btn login", {
+                      loading: l,
+                    }),
+                    onClick: p,
+                    children: [
+                      (0, jsxRuntime.jsx)("svg", {
+                        viewBox: "25 25 50 50",
+                        children: (0, jsxRuntime.jsx)("circle", {
+                          r: "20",
+                          cy: "50",
+                          cx: "50",
+                        }),
+                      }),
+                      (0, jsxRuntime.jsxs)("span", {
+                        children: [" ", n("accountLoginWithEmail")],
+                      }),
+                    ],
+                  }),
+                  (0, jsxRuntime.jsxs)("div", {
+                    className: "form-link",
+                    children: [
+                      (0, jsxRuntime.jsx)("a", {
+                        className: "link",
+                        href: "https://learn.trancy.org/reset-password",
+                        target: "_blank",
+                        children: n("accountForgotPassword"),
+                      }),
+                      (0, jsxRuntime.jsx)("a", {
+                        className: "link anchor",
+                        onClick: () => {
+                          r("/setting/signup");
+                        },
+                        children: n("accountSignup"),
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+  };
+
+  return LoginPage;
+}

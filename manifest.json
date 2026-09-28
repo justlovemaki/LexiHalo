@@ -55,6 +55,41 @@
       "all_frames": true
     },
     {
+      "matches": [
+        "https://youtube.com/*",
+        "https://m.youtube.com/*",
+        "https://www.youtube.com/*",
+        "https://netflix.com/*",
+        "https://www.netflix.com/*",
+        "https://www.coursera.org/*",
+        "https://coursera.org/*",
+        "https://www.udemy.com/*",
+        "https://udemy.com/*",
+        "https://*.udemy.cn/*",
+        "https://*.udemy.com/*",
+        "https://*.ted.com/*",
+        "https://*.youtube-nocookie.com/*",
+        "https://*.hbomax.com/*",
+        "https://*.max.com/*",
+        "https://*.disneyplus.com/*",
+        "https://*.edx.org/*",
+        "https://*.primevideo.com/*",
+        "https://*.deeplearning.ai/*",
+        "https://*.bilibili.com/*",
+        "https://vimeo.com/*",
+        "https://*.vimeo.com/*"
+      ],
+      "js": [
+        "assets/romanize-main.js",
+        "assets/ld-main.js",
+        "assets/tagger-main.js",
+        "assets/edvideo-main.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
       "matches": ["http://*/*", "https://*/*", "file://*/*"],
       "js": [
         "assets/site-rules-loader.js",

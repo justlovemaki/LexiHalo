@@ -1,0 +1,67 @@
+{
+  "description": "Stable standalone/BYOK single-bundle recovery baseline",
+  "entries": {
+    "background": {
+      "source": "vendor/legacy/background.js",
+      "output": "assets/background.js",
+      "requiredMarkers": [
+        "standalone",
+        "lexihaloSetupEngines",
+        "translateWithEngine",
+        "rebuildContextMenus"
+      ],
+      "supplements": [
+        "src/background/subtitle-ai.js",
+        "src/background/structured-ai-bridge.js"
+      ]
+    },
+    "reader": {
+      "source": "vendor/legacy/edreader-main.js",
+      "output": "assets/edreader-main.js",
+      "requiredMarkers": [
+        "lexihalo:immersive-enable",
+        "fulltext-whitelist",
+        "Web Dictionary"
+      ],
+      "supplements": [
+        "src/reader/",
+        "src/shared/clearScopedCache.js"
+      ]
+    },
+    "video": {
+      "source": "vendor/legacy/edvideo-main.js",
+      "output": "assets/edvideo-main.js",
+      "requiredMarkers": [
+        "__trancyEdvideoBooted",
+        "captionProvider",
+        "dualSubtitleEnabled",
+        "byok-"
+      ],
+      "supplements": [
+        "src/video/ui/",
+        "src/video/caption-scheduler.js"
+      ]
+    },
+    "popup": {
+      "source": "vendor/legacy/popup.js",
+      "output": "assets/popup.js",
+      "requiredMarkers": ["LexiHalo", "trancy-popup-context", "byok.html"],
+      "supplements": ["src/popup/ui/PopupApp.js"]
+    },
+    "languageDetector": {
+      "source": "vendor/legacy/ld-main.js",
+      "output": "assets/ld-main.js",
+      "requiredMarkers": ["window.detectLanguage"]
+    },
+    "posTagger": {
+      "source": "vendor/legacy/tagger-main.js",
+      "output": "assets/tagger-main.js",
+      "requiredMarkers": ["window.posTagger"]
+    },
+    "romanize": {
+      "source": "vendor/legacy/romanize-main.js",
+      "output": "assets/romanize-main.js",
+      "requiredMarkers": ["window.romanize"]
+    }
+  }
+}

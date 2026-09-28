@@ -15,13 +15,13 @@
   let saving = false;
   let statusTimer;
 
-  const normalizeRules = value => {
+  const normalizeRules = (value) => {
     const seen = new Set();
     return String(value || "")
       .split(/\r?\n/)
-      .map(rule => rule.trim())
-      .filter(rule => rule && !rule.startsWith("#"))
-      .filter(rule => {
+      .map((rule) => rule.trim())
+      .filter((rule) => rule && !rule.startsWith("#"))
+      .filter((rule) => {
         const key = rule.toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key);
@@ -33,19 +33,21 @@
     window.clearTimeout(statusTimer);
     status.classList.toggle("error", error);
     status.textContent = message;
-    if (!error) statusTimer = window.setTimeout(() => { status.textContent = ""; }, 3000);
+    if (!error)
+      statusTimer = window.setTimeout(() => {
+        status.textContent = "";
+      }, 3000);
   };
 
-  const setBusy = value => {
+  const setBusy = (value) => {
     saving = value;
     saveButton.disabled = value;
     addButton.disabled = value;
     currentButton.disabled = value;
   };
 
-  const currentRuleIndex = () => rules.findIndex(
-    rule => rule.toLowerCase() === currentHost.toLowerCase()
-  );
+  const currentRuleIndex = () =>
+    rules.findIndex((rule) => rule.toLowerCase() === currentHost.toLowerCase());
 
   const render = (syncEditor = true) => {
     if (syncEditor) editor.value = rules.join("\n");
@@ -68,7 +70,10 @@
         remove.textContent = "删除";
         remove.setAttribute("aria-label", `删除规则 ${rule}`);
         remove.addEventListener("click", () => {
-          persist(rules.filter((_, i) => i !== index), `已删除 ${rule}`);
+          persist(
+            rules.filter((_, i) => i !== index),
+            `已删除 ${rule}`,
+          );
         });
         row.append(text, remove);
         ruleList.append(row);
@@ -89,7 +94,9 @@
     try {
       // Keep only the immersive rules. Video subtitle auto-start continues to
       // use LexiHalo's original built-in setting.
-      await chrome.storage.local.set({ [STORAGE_KEY]: { immersive: nextRules } });
+      await chrome.storage.local.set({
+        [STORAGE_KEY]: { immersive: nextRules },
+      });
       rules = nextRules;
       render();
       showStatus(message);
@@ -111,7 +118,7 @@
   };
 
   addButton.addEventListener("click", addRule);
-  input.addEventListener("keydown", event => {
+  input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
       addRule();
@@ -123,27 +130,32 @@
     const index = currentRuleIndex();
     persist(
       index >= 0 ? rules.filter((_, i) => i !== index) : [...rules, currentHost],
-      index >= 0 ? `已移除 ${currentHost}` : `已添加 ${currentHost}`
+      index >= 0 ? `已移除 ${currentHost}` : `已添加 ${currentHost}`,
     );
   });
 
-  chrome.storage.local.get(STORAGE_KEY).then(result => {
-    const stored = result[STORAGE_KEY] || {};
-    rules = normalizeRules(Array.isArray(stored.immersive) ? stored.immersive.join("\n") : "");
-    if (Object.prototype.hasOwnProperty.call(stored, "subtitle")) {
-      chrome.storage.local.set({ [STORAGE_KEY]: { immersive: rules } }).catch(() => {});
-    }
-    render();
-  }).catch(error => showStatus(`读取失败：${error.message || error}`, true));
+  chrome.storage.local
+    .get(STORAGE_KEY)
+    .then((result) => {
+      const stored = result[STORAGE_KEY] || {};
+      rules = normalizeRules(Array.isArray(stored.immersive) ? stored.immersive.join("\n") : "");
+      if (Object.prototype.hasOwnProperty.call(stored, "subtitle")) {
+        chrome.storage.local.set({ [STORAGE_KEY]: { immersive: rules } }).catch(() => {});
+      }
+      render();
+    })
+    .catch((error) => showStatus(`读取失败：${error.message || error}`, true));
 
   saveButton.addEventListener("click", () => {
     persist(normalizeRules(editor.value), "已保存批量修改");
   });
 
-  document.addEventListener("keydown", event => {
+  document.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
       saveButton.click();
     }
   });
 })();
+
+document.documentElement.setAttribute("data-lexihalo-site-rules-runtime", "readable");
