@@ -55,7 +55,6 @@ export function recoverVideoToggleButton(dependencies) {
   const setTranslatorServiceAction = dependencies.setTranslatorServiceAction;
   const setVideoAction = dependencies.setVideoAction;
   const shallowEqual = dependencies.shallowEqual;
-  const ue = dependencies.ue;
   const useAppDispatch = dependencies.useAppDispatch;
   const useAppSelector = dependencies.useAppSelector;
   const useLocale = dependencies.useLocale;
@@ -562,7 +561,12 @@ export function recoverVideoToggleButton(dependencies) {
                 learning_entry: y,
               });
           },
-          children: (0, jsxRuntime.jsx)(ue, {}),
+          children: (0, jsxRuntime.jsx)("img", {
+            className: "icon-trancy-brand lexihalo-brand-icon",
+            src: `${props.runtime.scheme}/assets/icons/ic48.png`,
+            alt: "LexiHalo",
+            draggable: !1,
+          }),
         }),
         (0, jsxRuntime.jsx)("div", {
           className: xb()("trancy-panel-menu", {
@@ -953,10 +957,11 @@ export function recoverVideoToggleButton(dependencies) {
                             }),
                           ],
                         }),
-                      (0, jsxRuntime.jsxs)("div", {
-                        className: "trancy-menuitem",
-                        onClick: () => {
-                          const lines = captionProvider.lines || [];
+                      false &&
+                        (0, jsxRuntime.jsxs)("div", {
+                          className: "trancy-menuitem",
+                          onClick: () => {
+                            const lines = captionProvider.lines || [];
                           if (!lines.length) {
                             return void $w.info("当前视频暂无可用字幕");
                           }
@@ -1041,15 +1046,16 @@ export function recoverVideoToggleButton(dependencies) {
                                   item.translation ||
                                   ""
                                 ).trim();
-                                const orig = (
+                                const repairedSource = (
+                                  item.repairedText ||
                                   item.text ||
                                   item.originalText ||
                                   ""
                                 ).trim();
                                 const body =
-                                  trans && trans !== orig
-                                    ? `${trans}\r\n${orig}`
-                                    : orig || trans;
+                                  trans && trans !== repairedSource
+                                    ? `${trans}\r\n${repairedSource}`
+                                    : repairedSource || trans;
                                 return [
                                   idx + 1,
                                   `${W(item.start)} --\x3e ${W(item.end)}`,

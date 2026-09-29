@@ -1,4 +1,5 @@
 const VALID_CACHE_SCOPES = new Set([
+  "all",
   "ai-subtitle",
   "subtitle",
   "subtitle-refresh",
@@ -81,6 +82,7 @@ function requestCacheClear(scope) {
 
 function reloadCaptions(scope) {
   if (
+    scope !== "all" &&
     scope !== "ai-subtitle" &&
     scope !== "subtitle" &&
     scope !== "subtitle-refresh"

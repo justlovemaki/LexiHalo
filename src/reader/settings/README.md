@@ -12,6 +12,6 @@ The build fails when:
 - the corresponding bundled component cannot be replaced;
 - fewer than the required settings components are installed.
 
-`DualSubtitleSettings.js` owns the two subtitle-cache controls. Cache behavior itself lives in `src/shared/clearScopedCache.js`.
+`SettingsHome.js` owns the unified cache controls in the main settings panel. Cache behavior itself lives in `src/shared/clearScopedCache.js`.
 
 Do not edit the generated implementations in `assets/edreader-main.js`; run `npm run build` after changing these files.

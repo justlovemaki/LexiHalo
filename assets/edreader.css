@@ -1255,6 +1255,12 @@
   width: 12px;
   height: 12px;
 }
+.lexihalo-brand-icon {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: 22%;
+}
 .trancy-svg-brand:hover {
   animation: animateIcon 2s ease !important;
 }
@@ -1271,12 +1277,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #7c4cff 0%, #461eb1 100%);
-  box-shadow:
-    rgba(0, 0, 0, 0.2) 0px -1px 1px inset,
-    hsla(0, 0%, 100%, 0.2) 0px 1px 2px inset,
-    rgba(0, 0, 0, 0.1) 0px 2px 3px;
+  background: transparent;
+  box-shadow: none;
   border-radius: 6px;
+}
+.rd-translator-btn .lexihalo-brand-icon {
+  width: 24px;
+  height: 24px;
 }
 .rd-translator-btn.rd-translator-loader {
   border-radius: 100%;
@@ -2320,11 +2327,12 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: linear-gradient(180deg, #6831ff 0%, #5125c9 100%);
-  box-shadow:
-    rgba(0, 0, 0, 0.2) 0px -1px 1px inset,
-    hsla(0, 0%, 100%, 0.2) 0px 1px 2px inset,
-    rgba(0, 0, 0, 0.1) 0px 2px 3px;
+  background: transparent;
+  box-shadow: none;
+}
+.rd-float-btn .rd-logo .lexihalo-brand-icon {
+  width: 28px;
+  height: 28px;
 }
 .rd-float-btn .rd-logo svg {
   width: 19px;
@@ -4536,6 +4544,13 @@
   color: var(--rd-text-100);
   gap: 8px;
 }
+.rd-words-card
+  .rd-words-translation
+  .rd-words-translation-item.rd-words-translation-item-ai {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
 .rd-words-card .rd-words-translation .rd-words-translation-item .pos {
   color: var(--rd-primary);
   min-width: 40px;
@@ -4855,11 +4870,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: #5d2be6;
-  box-shadow:
-    rgba(0, 0, 0, 0.2) 0px -1px 1px inset,
-    hsla(0, 0%, 100%, 0.2) 0px 1px 2px inset,
-    rgba(0, 0, 0, 0.1) 0px 2px 3px;
+  background: transparent;
+  box-shadow: none;
+}
+.rd-slider .rd-slider-container .rd-slider-header .brand .logo .lexihalo-brand-icon {
+  width: 28px;
+  height: 28px;
 }
 .rd-slider .rd-slider-container .rd-slider-header .brand .title {
   margin-left: 6px;
@@ -9925,7 +9941,8 @@
   align-items: center;
   gap: 8px;
 }
-.rd-slider-setting .rd-setting-nav .brand svg {
+.rd-slider-setting .rd-setting-nav .brand svg,
+.rd-slider-setting .rd-setting-nav .brand .lexihalo-brand-icon {
   width: 32px;
   height: 32px;
   fill: var(--rd-primary);

@@ -16,6 +16,7 @@ artifacts/
 recovered/
 src-recovered/
 coverage/
+dist/
 
 # Browser extension packaging artifacts
 web-ext-artifacts/

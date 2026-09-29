@@ -82,9 +82,15 @@
     if (event.source !== window || event.data?.eventName !== "lexihalo:cache-clear-request") return;
     const scope = event.data.scope;
     if (
-      !["ai-subtitle", "subtitle", "subtitle-refresh", "immersive", "selection", "quick"].includes(
-        scope,
-      )
+      ![
+        "all",
+        "ai-subtitle",
+        "subtitle",
+        "subtitle-refresh",
+        "immersive",
+        "selection",
+        "quick",
+      ].includes(scope)
     )
       return;
     const button =

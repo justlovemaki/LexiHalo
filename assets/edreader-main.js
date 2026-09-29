@@ -29412,7 +29412,62 @@
           lastActionAt: 0,
           tasks: ["new-feature", "new-share"],
           config: {
-            schemes: [],
+            schemes: [
+              {
+                name: "Oxford",
+                scheme: "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+                from: ["*"],
+                to: ["*"],
+                codes: {
+                  en: "english",
+                },
+                options: {
+                  width: 450,
+                  height: 750,
+                  type: "popup",
+                },
+              },
+              {
+                name: "Collins",
+                scheme: "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+                from: ["*"],
+                to: ["*"],
+                codes: {
+                  en: "english",
+                },
+                options: {
+                  width: 450,
+                  height: 750,
+                  type: "popup",
+                },
+              },
+              {
+                name: "Longman",
+                scheme: "https://www.ldoceonline.com/dictionary/$TEXT",
+                from: ["*"],
+                to: ["*"],
+                codes: {
+                  en: "english",
+                },
+                options: {
+                  width: 450,
+                  height: 750,
+                  type: "popup",
+                },
+              },
+              {
+                name: "Youdao",
+                scheme: "https://dict.youdao.com/w/$TEXT",
+                from: ["*"],
+                to: ["*"],
+                codes: {},
+                options: {
+                  width: 450,
+                  height: 750,
+                  type: "popup",
+                },
+              },
+            ],
             partOfSpeech: [],
             voices: [],
             PRACTICE_LIMIT: 5,
@@ -30506,20 +30561,16 @@
         };
       var bi = i(6070);
       const yi = () =>
-          (0, bi.jsx)("svg", {
-            className: "icon-trancy-brand",
+          (0, bi.jsx)("img", {
+            className: "icon-trancy-brand lexihalo-brand-icon",
+            src:
+              globalThis.chrome?.runtime?.getURL?.("assets/icons/ic48.png") ||
+              globalThis.browser?.runtime?.getURL?.("assets/icons/ic48.png") ||
+              "assets/icons/ic48.png",
+            alt: "LexiHalo",
             width: "20",
             height: "20",
-            viewBox: "0 0 20 20",
-            fill: "currentColor",
-            xmlns: "http://www.w3.org/2000/svg",
-            children: (0, bi.jsx)("path", {
-              className: "icon-trancy-brand-icon",
-              "fill-rule": "evenodd",
-              "clip-rule": "evenodd",
-              d: "M2.26981 3.3543C2.49747 3.08644 2.80895 2.99474 3.0825 3.00023C4.04646 3.0195 6.89828 3.35796 10.113 4.63373C11.8224 4.03793 14.0853 3.55535 16.8303 3.526C17.4822 3.51903 18 4.05545 18 4.70159V10.8281C18 11.4858 17.4752 12.0003 16.8485 12.0121C15.9601 12.0288 14.9544 12.1145 14.1241 12.2113V14.9603C14.1241 15.0724 14.1102 15.1987 14.0706 15.3292C13.7792 16.2894 13.0493 16.9508 12.2382 17.3637C11.4256 17.7775 10.4644 17.9804 9.55306 17.9986C8.64761 18.0168 7.71703 17.8538 6.98212 17.4604C6.23348 17.0596 5.60439 16.3595 5.60439 15.3428V15.339L5.63937 11.7304C5.44415 11.6614 5.19389 11.5813 4.91526 11.4999C4.2171 11.2958 3.42754 11.1084 2.95856 11.0582C2.47548 11.0065 2.01845 10.6037 2.01088 10.0191C1.98858 8.29598 2.00645 5.08082 2.01277 4.09242C2.0141 3.88666 2.06169 3.59918 2.26981 3.3543ZM7.17098 11.2332L7.15542 12.8654C8.43327 11.8278 10.4426 11.1551 13.2565 10.7627C14.1141 10.6431 15.3426 10.5148 16.473 10.4747V5.0801C13.9265 5.14874 11.8658 5.63148 10.3578 6.18703C8.81528 6.75533 7.80923 7.48847 7.32084 8.00885C7.21419 8.12248 7.13535 8.33217 7.1396 8.67776L7.17098 11.2332ZM7.20812 15.2532C7.15751 15.3745 7.13846 15.5122 7.19502 15.6309C7.27198 15.7925 7.42598 15.9482 7.69541 16.0924C8.13611 16.3283 8.79056 16.4665 9.52289 16.4518C10.2493 16.4372 10.9787 16.2735 11.5525 15.9813C12.0295 15.7385 12.3534 15.4331 12.5245 15.0909C12.5803 14.9795 12.5972 14.854 12.5972 14.7294V12.4303C9.11285 13.0326 7.70422 14.0632 7.20812 15.2532ZM5.62999 10.101L5.61276 8.697C5.60612 8.15644 5.71821 7.4713 6.21428 6.94271C6.63293 6.49665 7.25541 6.0036 8.07195 5.54282C6.11249 4.91405 4.44095 4.65652 3.53687 4.57637C3.53018 5.76394 3.52035 8.05492 3.53329 9.5791C4.09274 9.6758 4.7712 9.84755 5.33843 10.0133C5.43781 10.0424 5.5354 10.0717 5.62999 10.101Z",
-              fill: "white",
-            }),
+            draggable: false,
           }),
         xi = () =>
           (0, bi.jsx)("svg", {
@@ -30586,31 +30637,16 @@
             }),
           }),
         ji = () =>
-          (0, bi.jsx)("svg", {
-            className: "trancy-svg-brand",
+          (0, bi.jsx)("img", {
+            className: "trancy-svg-brand lexihalo-brand-icon",
+            src:
+              globalThis.chrome?.runtime?.getURL?.("assets/icons/ic48.png") ||
+              globalThis.browser?.runtime?.getURL?.("assets/icons/ic48.png") ||
+              "assets/icons/ic48.png",
+            alt: "LexiHalo",
             width: "20",
             height: "20",
-            viewBox: "0 0 20 20",
-            fill: "none",
-            xmlns: "http://www.w3.org/2000/svg",
-            children: (0, bi.jsxs)("g", {
-              "clip-path": "url(#clip0_341_21)",
-              children: [
-                (0, bi.jsx)("path", {
-                  className: "svg-brand-bg",
-                  d: "M17.9154 17.9104C16.0286 19.79 13.3154 20 10 20C6.68036 20 3.96321 19.7875 2.07714 17.9029C0.191428 16.0189 0 13.3061 0 9.99036C0 6.67393 0.191428 3.96036 2.07786 2.07571C3.96393 0.190714 6.68071 0 10 0C13.3193 0 16.0357 0.190714 17.9218 2.07571C19.8082 3.96071 20 6.67393 20 9.99036C20 13.3104 19.8061 16.0261 17.9154 17.9104Z",
-                  fill: "#5D2BE6",
-                }),
-                (0, bi.jsx)("path", {
-                  className: "svg-brand-logo",
-                  "fill-rule": "evenodd",
-                  "clip-rule": "evenodd",
-                  d: "M4.20236 5.18707C4.37311 4.9888 4.60672 4.92092 4.81187 4.92497C5.53484 4.93925 7.67372 5.18977 10.0847 6.13413C11.3668 5.69309 13.064 5.33589 15.1227 5.31417C15.6117 5.30901 16 5.70607 16 6.18436V10.7193C16 11.2061 15.6064 11.587 15.1364 11.5957C14.4701 11.6081 13.7158 11.6715 13.0931 11.7432V13.778C13.0931 13.861 13.0826 13.9544 13.0529 14.051C12.8344 14.7618 12.287 15.2514 11.6786 15.5571C11.0692 15.8633 10.3483 16.0135 9.66479 16.027C8.98571 16.0404 8.28777 15.9198 7.73658 15.6286C7.17511 15.332 6.7033 14.8137 6.7033 14.0611V14.0583L6.72953 11.3872C6.58312 11.3361 6.39542 11.2768 6.18644 11.2165C5.66282 11.0655 5.07067 10.9268 4.71892 10.8896C4.35662 10.8514 4.01384 10.5532 4.00816 10.1204C3.99143 8.84497 4.00485 6.46507 4.00958 5.73343C4.01057 5.58114 4.04627 5.36833 4.20236 5.18707ZM6.97745 11.4847C6.9774 11.4847 6.97657 11.4843 6.97505 11.4834C6.97674 11.4843 6.9775 11.4847 6.97745 11.4847ZM7.87824 11.0192C7.87828 11.0222 7.87831 11.0252 7.87831 11.0282V11.031L7.86656 12.2273C8.82496 11.4593 10.3319 10.9613 12.4424 10.6709C13.0856 10.5823 14.007 10.4873 14.8548 10.4577V6.46453C12.9449 6.51533 11.3993 6.87266 10.2684 7.28389C9.11147 7.70456 8.35692 8.24723 7.99064 8.63243C7.91065 8.71655 7.85152 8.87176 7.8547 9.12757L7.87824 11.0192ZM7.85345 14.1332C7.87725 14.303 7.9909 14.4677 8.27157 14.616C8.60208 14.7906 9.09293 14.8929 9.64217 14.882C10.187 14.8713 10.734 14.7501 11.1644 14.5338C11.5815 14.3242 11.8425 14.0517 11.9479 13.7463V11.9053C9.19866 12.3743 8.17244 13.1942 7.85345 14.1332ZM6.72249 10.181L6.70956 9.14182C6.70459 8.74167 6.78866 8.23454 7.16072 7.84326C7.47469 7.51307 7.94156 7.14813 8.55397 6.80705C7.08437 6.34162 5.83071 6.151 5.15265 6.09167C5.14763 6.97072 5.14027 8.66654 5.14997 9.79475C5.56957 9.86634 6.0784 9.99347 6.50382 10.1162C6.57837 10.1377 6.65156 10.1594 6.72249 10.181Z",
-                  fill: "white",
-                  "fill-opacity": "1",
-                }),
-              ],
-            }),
+            draggable: false,
           }),
         Ai = () =>
           (0, bi.jsx)("svg", {
@@ -32591,7 +32627,10 @@
                 ? new Promise((e, t) => {
                     var n;
                     if (!(null == (n = chrome.runtime) ? void 0 : n.id))
-                      return void t(new Error("Extension context invalidated."));
+                      return e({
+                        message: "invalidated",
+                        data: {},
+                      });
                     const i = (t) => e(t.response);
                     this.event.once(r.uuid, i);
                     const a = (e) => {
@@ -32602,6 +32641,16 @@
                       e &&
                         "function" == typeof e.catch &&
                         e.catch((e) => {
+                          if (
+                            !chrome.runtime?.id ||
+                            (e && String(e.message || e).includes("Extension context invalidated"))
+                          ) {
+                            e({
+                              message: "invalidated",
+                              data: {},
+                            });
+                            return;
+                          }
                           var t;
                           const n = e instanceof Error ? e.message : String(e);
                           (!(null == (t = chrome.runtime) ? void 0 : t.id) ||
@@ -32610,6 +32659,11 @@
                             a(e);
                         });
                     } catch (e) {
+                      if (!chrome.runtime?.id)
+                        return e({
+                          message: "invalidated",
+                          data: {},
+                        });
                       a(e);
                     }
                   })
@@ -32692,7 +32746,9 @@
         }
         getStateChunks(e) {
           return To(this, null, function* () {
-            const { data: t } = yield this.emit("getStateChunks", ["background"], xo({}, e));
+            const { data: t } = (yield this.emit("getStateChunks", ["background"], xo({}, e))) || {
+              data: {},
+            };
             return t;
           });
         }
@@ -32705,7 +32761,9 @@
                 }),
                 Promise.resolve(this.state)
               );
-            const { message: t, data: n } = yield this.emit("getState", ["background"]);
+            const { message: t, data: n } = (yield this.emit("getState", ["background"])) || {
+              data: {},
+            };
             return (
               tt("[SYS.ec] getState", {
                 message: t,
@@ -32717,7 +32775,26 @@
           });
         }
         getRuntime() {
-          return this.emit("runtime", ["background"]);
+          return To(this, null, function* () {
+            try {
+              const res = yield this.emit("runtime", ["background"]);
+              if (res && res.data && res.data.version) return res;
+            } catch (_) {}
+            const ver =
+              (typeof chrome !== "undefined" && chrome.runtime?.getManifest?.()?.version) ||
+              "8.3.0";
+            const sc =
+              (typeof chrome !== "undefined" && chrome.runtime?.getURL?.("").slice(0, -1)) || "";
+            const rid = (typeof chrome !== "undefined" && chrome.runtime?.id) || "";
+            return {
+              message: "ok",
+              data: {
+                version: ver,
+                scheme: sc,
+                id: rid,
+              },
+            };
+          });
         }
         handle(e, t) {
           return To(this, null, function* () {
@@ -32745,7 +32822,9 @@
           return To(this, null, function* () {
             var e;
             if (!this.token) {
-              const { data: t } = yield this.emit("getState", ["background"]);
+              const { data: t } = (yield this.emit("getState", ["background"])) || {
+                data: {},
+              };
               return (this.token = null == (e = t.user) ? void 0 : e.token), this.token;
             }
             return this.token;
@@ -40896,31 +40975,16 @@
                 ],
               });
             case "trancy":
-              return (0, bi.jsx)("svg", {
-                className: "trancy-svg-brand",
+              return (0, bi.jsx)("img", {
+                className: "trancy-svg-brand lexihalo-brand-icon",
+                src:
+                  globalThis.chrome?.runtime?.getURL?.("assets/icons/ic48.png") ||
+                  globalThis.browser?.runtime?.getURL?.("assets/icons/ic48.png") ||
+                  "assets/icons/ic48.png",
+                alt: "LexiHalo",
                 width: "20",
                 height: "20",
-                viewBox: "0 0 20 20",
-                fill: "none",
-                xmlns: "http://www.w3.org/2000/svg",
-                children: (0, bi.jsxs)("g", {
-                  "clip-path": "url(#clip0_341_21)",
-                  children: [
-                    (0, bi.jsx)("path", {
-                      className: "svg-brand-bg",
-                      d: "M17.9154 17.9104C16.0286 19.79 13.3154 20 10 20C6.68036 20 3.96321 19.7875 2.07714 17.9029C0.191428 16.0189 0 13.3061 0 9.99036C0 6.67393 0.191428 3.96036 2.07786 2.07571C3.96393 0.190714 6.68071 0 10 0C13.3193 0 16.0357 0.190714 17.9218 2.07571C19.8082 3.96071 20 6.67393 20 9.99036C20 13.3104 19.8061 16.0261 17.9154 17.9104Z",
-                      fill: "#5D2BE6",
-                    }),
-                    (0, bi.jsx)("path", {
-                      className: "svg-brand-logo",
-                      "fill-rule": "evenodd",
-                      "clip-rule": "evenodd",
-                      d: "M4.20236 5.18707C4.37311 4.9888 4.60672 4.92092 4.81187 4.92497C5.53484 4.93925 7.67372 5.18977 10.0847 6.13413C11.3668 5.69309 13.064 5.33589 15.1227 5.31417C15.6117 5.30901 16 5.70607 16 6.18436V10.7193C16 11.2061 15.6064 11.587 15.1364 11.5957C14.4701 11.6081 13.7158 11.6715 13.0931 11.7432V13.778C13.0931 13.861 13.0826 13.9544 13.0529 14.051C12.8344 14.7618 12.287 15.2514 11.6786 15.5571C11.0692 15.8633 10.3483 16.0135 9.66479 16.027C8.98571 16.0404 8.28777 15.9198 7.73658 15.6286C7.17511 15.332 6.7033 14.8137 6.7033 14.0611V14.0583L6.72953 11.3872C6.58312 11.3361 6.39542 11.2768 6.18644 11.2165C5.66282 11.0655 5.07067 10.9268 4.71892 10.8896C4.35662 10.8514 4.01384 10.5532 4.00816 10.1204C3.99143 8.84497 4.00485 6.46507 4.00958 5.73343C4.01057 5.58114 4.04627 5.36833 4.20236 5.18707ZM6.97745 11.4847C6.9774 11.4847 6.97657 11.4843 6.97505 11.4834C6.97674 11.4843 6.9775 11.4847 6.97745 11.4847ZM7.87824 11.0192C7.87828 11.0222 7.87831 11.0252 7.87831 11.0282V11.031L7.86656 12.2273C8.82496 11.4593 10.3319 10.9613 12.4424 10.6709C13.0856 10.5823 14.007 10.4873 14.8548 10.4577V6.46453C12.9449 6.51533 11.3993 6.87266 10.2684 7.28389C9.11147 7.70456 8.35692 8.24723 7.99064 8.63243C7.91065 8.71655 7.85152 8.87176 7.8547 9.12757L7.87824 11.0192ZM7.85345 14.1332C7.87725 14.303 7.9909 14.4677 8.27157 14.616C8.60208 14.7906 9.09293 14.8929 9.64217 14.882C10.187 14.8713 10.734 14.7501 11.1644 14.5338C11.5815 14.3242 11.8425 14.0517 11.9479 13.7463V11.9053C9.19866 12.3743 8.17244 13.1942 7.85345 14.1332ZM6.72249 10.181L6.70956 9.14182C6.70459 8.74167 6.78866 8.23454 7.16072 7.84326C7.47469 7.51307 7.94156 7.14813 8.55397 6.80705C7.08437 6.34162 5.83071 6.151 5.15265 6.09167C5.14763 6.97072 5.14027 8.66654 5.14997 9.79475C5.56957 9.86634 6.0784 9.99347 6.50382 10.1162C6.57837 10.1377 6.65156 10.1594 6.72249 10.181Z",
-                      fill: "white",
-                      "fill-opacity": "1",
-                    }),
-                  ],
-                }),
+                draggable: false,
               });
             case "switch":
               return (0, bi.jsxs)("svg", {
@@ -50320,6 +50384,8 @@
               Xy: Xy,
               an: an,
               classNames: O_,
+              extensionClient: extensionClient,
+              immersiveTranslator: immersiveTranslator,
               jsxRuntime: bi,
               so: so,
               useApiClient: useApiClient,
@@ -50343,6 +50409,8 @@
                 Ta: Ta,
                 an: an,
                 classNames: O_,
+                extensionClient: extensionClient,
+                immersiveTranslator: immersiveTranslator,
                 jsxRuntime: bi,
                 so: so,
                 useApiClient: useApiClient,
@@ -56666,20 +56734,16 @@
                   }),
                   style: a,
                   children: [
-                    (0, bi.jsx)("svg", {
-                      className: "outline-trancy",
-                      width: "18",
-                      height: "18",
-                      viewBox: "0 0 20 20",
-                      fill: "currentColor",
-                      xmlns: "http://www.w3.org/2000/svg",
-                      children: (0, bi.jsx)("path", {
-                        className: "outline-trancy-icon",
-                        "fill-rule": "evenodd",
-                        "clip-rule": "evenodd",
-                        d: "M2.26981 3.3543C2.49747 3.08644 2.80895 2.99474 3.0825 3.00023C4.04646 3.0195 6.89828 3.35796 10.113 4.63373C11.8224 4.03793 14.0853 3.55535 16.8303 3.526C17.4822 3.51903 18 4.05545 18 4.70159V10.8281C18 11.4858 17.4752 12.0003 16.8485 12.0121C15.9601 12.0288 14.9544 12.1145 14.1241 12.2113V14.9603C14.1241 15.0724 14.1102 15.1987 14.0706 15.3292C13.7792 16.2894 13.0493 16.9508 12.2382 17.3637C11.4256 17.7775 10.4644 17.9804 9.55306 17.9986C8.64761 18.0168 7.71703 17.8538 6.98212 17.4604C6.23348 17.0596 5.60439 16.3595 5.60439 15.3428V15.339L5.63937 11.7304C5.44415 11.6614 5.19389 11.5813 4.91526 11.4999C4.2171 11.2958 3.42754 11.1084 2.95856 11.0582C2.47548 11.0065 2.01845 10.6037 2.01088 10.0191C1.98858 8.29598 2.00645 5.08082 2.01277 4.09242C2.0141 3.88666 2.06169 3.59918 2.26981 3.3543ZM7.17098 11.2332L7.15542 12.8654C8.43327 11.8278 10.4426 11.1551 13.2565 10.7627C14.1141 10.6431 15.3426 10.5148 16.473 10.4747V5.0801C13.9265 5.14874 11.8658 5.63148 10.3578 6.18703C8.81528 6.75533 7.80923 7.48847 7.32084 8.00885C7.21419 8.12248 7.13535 8.33217 7.1396 8.67776L7.17098 11.2332ZM7.20812 15.2532C7.15751 15.3745 7.13846 15.5122 7.19502 15.6309C7.27198 15.7925 7.42598 15.9482 7.69541 16.0924C8.13611 16.3283 8.79056 16.4665 9.52289 16.4518C10.2493 16.4372 10.9787 16.2735 11.5525 15.9813C12.0295 15.7385 12.3534 15.4331 12.5245 15.0909C12.5803 14.9795 12.5972 14.854 12.5972 14.7294V12.4303C9.11285 13.0326 7.70422 14.0632 7.20812 15.2532ZM5.62999 10.101L5.61276 8.697C5.60612 8.15644 5.71821 7.4713 6.21428 6.94271C6.63293 6.49665 7.25541 6.0036 8.07195 5.54282C6.11249 4.91405 4.44095 4.65652 3.53687 4.57637C3.53018 5.76394 3.52035 8.05492 3.53329 9.5791C4.09274 9.6758 4.7712 9.84755 5.33843 10.0133C5.43781 10.0424 5.5354 10.0717 5.62999 10.101Z",
-                        fill: "#FFFFFF",
-                      }),
+                    (0, bi.jsx)("img", {
+                      className: "outline-trancy lexihalo-brand-icon",
+                      src:
+                        globalThis.chrome?.runtime?.getURL?.("assets/icons/ic48.png") ||
+                        globalThis.browser?.runtime?.getURL?.("assets/icons/ic48.png") ||
+                        "assets/icons/ic48.png",
+                      alt: "LexiHalo",
+                      width: "20",
+                      height: "20",
+                      draggable: false,
                     }),
                     (0, bi.jsx)("svg", {
                       viewBox: "0 0 16 16",
@@ -59296,14 +59360,23 @@
                 L(1);
                 try {
                   const { translatorService: n } = yield extensionClient.getStateChunks({
-                      only: ["translatorService"],
-                    }),
-                    r = n.engines.find(
-                      (e) => "user" === e.type || String(e._id || "").startsWith("byok-"),
-                    );
+                    only: ["translatorService"],
+                  });
+                  const isAiEngine = (e) =>
+                    Boolean(e) &&
+                    ("user" === e.type ||
+                      String(e._id || "").startsWith("byok-") ||
+                      "built-in" !== e.type);
+                  const preferredEngine =
+                    [n?.sentence, n?.subtitle, n?.fulltext].find(
+                      (e) => isAiEngine(e) && n.engines?.some((x) => x._id === e._id),
+                    ) || n.engines?.find(isAiEngine);
+                  const r =
+                    preferredEngine &&
+                    (n.engines?.find((e) => e._id === preferredEngine._id) || preferredEngine);
                   if (!r) throw new Error("请先配置 BYOK AI 模型");
-                  const i = `You are a bilingual lexicographer. Explain the word in its exact sentence context. The source language is ${s.subtitle}; answer in ${s.translation}. Return only valid JSON without Markdown.`,
-                    a = `Word: {{text}}\nSentence context: ${t || ""}\nReturn {"pos":"part of speech","translation":"the precise contextual meaning in ${s.translation}"}.`,
+                  const i = `You are a bilingual lexicographer. Explain the word in its exact sentence context. The source language is ${s.subtitle}; answer in ${s.translation}. Return ONLY a JSON object: {"pos": "part of speech", "translation": "precise meaning in ${s.translation}"}. Do NOT output Markdown codeblocks, explanation, or any other text.`,
+                    a = `Word: {{text}}\nSentence context: ${t || ""}\nReturn JSON format: {"pos":"part of speech","translation":"the precise contextual meaning in ${s.translation}"}`,
                     o = yield extensionClient.translateWithEngine({
                       texts: [e],
                       from: s.subtitle,
@@ -59318,18 +59391,43 @@
                     l = null == o[0] ? void 0 : o[0].translation;
                   if (!l)
                     throw new Error((null == o[0] ? void 0 : o[0].message) || "AI 精准释义失败");
-                  let c = String(l)
-                      .trim()
-                      .replace(/^```(?:json)?\s*/i, "")
-                      .replace(/\s*```$/i, ""),
-                    u = c.indexOf("{"),
+                  let c = String(l).trim();
+                  const fenceMatch = c.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                  if (fenceMatch) c = fenceMatch[1].trim();
+                  let u = c.indexOf("{"),
                     d = c.lastIndexOf("}");
-                  u >= 0 && d > u && (c = c.slice(u, d + 1));
-                  const _ = JSON.parse(c);
-                  P({
-                    pos: _ && _.pos ? String(_.pos) : "",
-                    translation: _ && _.translation ? String(_.translation) : "",
-                  });
+                  let parsed = null;
+                  if (u >= 0 && d > u) {
+                    try {
+                      parsed = JSON.parse(c.slice(u, d + 1));
+                    } catch (_) {}
+                  }
+                  if (!parsed) {
+                    try {
+                      parsed = JSON.parse(c);
+                    } catch (_) {}
+                  }
+                  if (parsed && typeof parsed === "object") {
+                    P({
+                      pos: parsed.pos ? String(parsed.pos) : "",
+                      translation: parsed.translation ? String(parsed.translation) : "",
+                    });
+                  } else {
+                    const posMatch = c.match(
+                      /(?:^|\n|\s)(n\.|v\.|adj\.|adv\.|prep\.|pron\.|conj\.|det\.|aux\.|int\.)\s*(.*)/i,
+                    );
+                    if (posMatch) {
+                      P({
+                        pos: posMatch[1].trim(),
+                        translation: (posMatch[2] || "").trim() || c,
+                      });
+                    } else {
+                      P({
+                        pos: "",
+                        translation: c,
+                      });
+                    }
+                  }
                 } catch (e) {
                   P({
                     pos: "AI",
@@ -59550,7 +59648,7 @@
                           ),
                           (0 !== E || N) &&
                             (0, jsxRuntime.jsxs)("div", {
-                              className: "rd-words-translation-item",
+                              className: "rd-words-translation-item rd-words-translation-item-ai",
                               children: [
                                 (0, jsxRuntime.jsx)("span", {
                                   className: classNames()("pos ai", {
@@ -60460,11 +60558,20 @@
                 $(e), F(!0), V(void 0);
                 try {
                   const { translatorService: r } = yield extensionClient.getStateChunks({
-                      only: ["translatorService"],
-                    }),
-                    i = r.engines.find(
-                      (e) => "user" === e.type || String(e._id || "").startsWith("byok-"),
-                    );
+                    only: ["translatorService"],
+                  });
+                  const isAiEngine = (e) =>
+                    Boolean(e) &&
+                    ("user" === e.type ||
+                      String(e._id || "").startsWith("byok-") ||
+                      "built-in" !== e.type);
+                  const preferredEngine =
+                    [r?.sentence, r?.subtitle, r?.fulltext].find(
+                      (e) => isAiEngine(e) && r.engines?.some((x) => x._id === e._id),
+                    ) || r.engines?.find(isAiEngine);
+                  const i =
+                    preferredEngine &&
+                    (r.engines?.find((e) => e._id === preferredEngine._id) || preferredEngine);
                   if (!i) throw new Error("请先在 BYOK 设置中配置 AI 模型");
                   const a = `You are a professional bilingual lexicographer. Analyze one word from ${t} and explain it in ${n}. Return only valid JSON without Markdown or extra text.`,
                     o =
@@ -60505,15 +60612,48 @@
                     l = null == s[0] ? void 0 : s[0].translation;
                   if (!l)
                     throw new Error((null == s[0] ? void 0 : s[0].message) || "AI 详解生成失败");
-                  let c = String(l)
-                      .trim()
-                      .replace(/^```(?:json)?\s*/i, "")
-                      .replace(/\s*```$/i, ""),
-                    u = c.indexOf("{"),
+                  let c = String(l).trim();
+                  const fenceMatch = c.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                  if (fenceMatch) c = fenceMatch[1].trim();
+                  let u = c.indexOf("{"),
                     d = c.lastIndexOf("}");
-                  u >= 0 && d > u && (c = c.slice(u, d + 1));
-                  const p = JSON.parse(c);
-                  if (!p || !Array.isArray(p.senses)) throw new Error("AI 返回格式无效");
+                  let p = null;
+                  if (u >= 0 && d > u) {
+                    try {
+                      p = JSON.parse(c.slice(u, d + 1));
+                    } catch (_) {}
+                  }
+                  if (!p) {
+                    try {
+                      p = JSON.parse(c);
+                    } catch (_) {}
+                  }
+                  if (!p || !Array.isArray(p.senses) || p.senses.length === 0) {
+                    // Fallback: build a minimal valid structure from unstructured AI text or plain translation
+                    const plain = c.replace(/[{}\[\]"]/g, "").trim();
+                    p = {
+                      syllables: [],
+                      pronunciations: [],
+                      senses: [
+                        {
+                          pos: "",
+                          definition: [
+                            {
+                              translations: [plain || l],
+                              targetTranslation: "",
+                              examples: [],
+                            },
+                          ],
+                        },
+                      ],
+                      inflections: [],
+                      etymology: "",
+                      examples: [],
+                      phrases: [],
+                      synonyms: [],
+                      relatedWords: [],
+                    };
+                  }
                   B(p);
                 } catch (e) {
                   V({
@@ -61319,7 +61459,59 @@
                         }),
                         (0, jsxRuntime.jsx)("div", {
                           className: "item-dict-wrapper",
-                          children: g.schemes.map((e, t) =>
+                          children: (g.schemes && g.schemes.length > 0
+                            ? g.schemes
+                            : [
+                                {
+                                  name: "Oxford",
+                                  scheme:
+                                    "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+                                  codes: {
+                                    en: "english",
+                                  },
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                                {
+                                  name: "Collins",
+                                  scheme:
+                                    "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+                                  codes: {
+                                    en: "english",
+                                  },
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                                {
+                                  name: "Longman",
+                                  scheme: "https://www.ldoceonline.com/dictionary/$TEXT",
+                                  codes: {
+                                    en: "english",
+                                  },
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                                {
+                                  name: "Youdao",
+                                  scheme: "https://dict.youdao.com/w/$TEXT",
+                                  codes: {},
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                              ]
+                          ).map((e, t) =>
                             (0, jsxRuntime.jsx)(
                               "div",
                               {
@@ -63315,51 +63507,6 @@
             { dispatch: i } = useDispatchBridge(),
             a = (useApiClient(!0), !1 !== n.dualSubtitleEnabled),
             { locale: o } = useLocale();
-          const renderCacheControl = (label, description, scope) =>
-            (0, jsxRuntime.jsxs)("div", {
-              className: "item-slider",
-              children: [
-                (0, jsxRuntime.jsxs)("div", {
-                  className: "item-slider-content",
-                  children: [
-                    (0, jsxRuntime.jsx)("div", {
-                      className: "item-left",
-                      children: (0, jsxRuntime.jsx)("span", {
-                        children: label,
-                      }),
-                    }),
-                    (0, jsxRuntime.jsx)("div", {
-                      className: "item-right",
-                      children: (0, jsxRuntime.jsx)("div", {
-                        className: "right-link",
-                        "data-lexihalo-cache-scope": scope,
-                        onClick: (event) => {
-                          event.stopPropagation();
-                          if (window.lexihaloClearScopedCache) {
-                            window.lexihaloClearScopedCache(scope);
-                          } else {
-                            window.postMessage(
-                              {
-                                eventName: "lexihalo:cache-clear-request",
-                                scope,
-                              },
-                              "*",
-                            );
-                          }
-                        },
-                        children: (0, jsxRuntime.jsx)("span", {
-                          children: "清理",
-                        }),
-                      }),
-                    }),
-                  ],
-                }),
-                (0, jsxRuntime.jsx)("div", {
-                  className: "item-slider-des",
-                  children: description,
-                }),
-              ],
-            });
           return (0, jsxRuntime.jsxs)("div", {
             className: "rd-slider-inside",
             id: "trancy-slider",
@@ -63453,30 +63600,6 @@
                         }),
                       ],
                     }),
-                  }),
-                  (0, jsxRuntime.jsxs)("div", {
-                    id: "lexihalo-subtitle-ai-sidebar-host",
-                    children: [
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "slider-label lg-label",
-                        children: "缓存管理",
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "item-slider-group",
-                        children: [
-                          renderCacheControl(
-                            "重新载入当前字幕",
-                            "重置页面字幕并优先复用本机 AI 缓存，不重新下载字幕轨道",
-                            "subtitle",
-                          ),
-                          renderCacheControl(
-                            "彻底清除 AI 字幕缓存",
-                            "删除持久 AI 修复与翻译结果，下次播放时重新请求模型",
-                            "ai-subtitle",
-                          ),
-                        ],
-                      }),
-                    ],
                   }),
                   (0, jsxRuntime.jsx)("div", {
                     className: "slider-label lg-label",
@@ -64394,60 +64517,6 @@
                     (0, jsxRuntime.jsx)("div", {
                       className: "tips",
                       children: o("rd_immersive_translate_tips"),
-                    }),
-                    (0, jsxRuntime.jsxs)("div", {
-                      id: "lexihalo-immersive-cache-host",
-                      children: [
-                        (0, jsxRuntime.jsx)("div", {
-                          className: "slider-label lg-label",
-                          children: "缓存管理",
-                        }),
-                        (0, jsxRuntime.jsx)("div", {
-                          className: "item-slider-group",
-                          children: (0, jsxRuntime.jsxs)("div", {
-                            className: "item-slider",
-                            children: [
-                              (0, jsxRuntime.jsxs)("div", {
-                                className: "item-slider-content",
-                                children: [
-                                  (0, jsxRuntime.jsx)("div", {
-                                    className: "item-left",
-                                    children: (0, jsxRuntime.jsx)("span", {
-                                      children: "沉浸式翻译缓存",
-                                    }),
-                                  }),
-                                  (0, jsxRuntime.jsx)("div", {
-                                    className: "item-right",
-                                    children: (0, jsxRuntime.jsx)("div", {
-                                      className: "right-link",
-                                      "data-lexihalo-cache-scope": "immersive",
-                                      onClick: (e) => {
-                                        e.stopPropagation(),
-                                          window.lexihaloClearScopedCache
-                                            ? window.lexihaloClearScopedCache("immersive")
-                                            : window.postMessage(
-                                                {
-                                                  eventName: "lexihalo:cache-clear-request",
-                                                  scope: "immersive",
-                                                },
-                                                "*",
-                                              );
-                                      },
-                                      children: (0, jsxRuntime.jsx)("span", {
-                                        children: "清理",
-                                      }),
-                                    }),
-                                  }),
-                                ],
-                              }),
-                              (0, jsxRuntime.jsx)("div", {
-                                className: "item-slider-des",
-                                children: "仅清除网页沉浸式翻译缓存，刷新页面后重新翻译",
-                              }),
-                            ],
-                          }),
-                        }),
-                      ],
                     }),
                     (0, jsxRuntime.jsx)("div", {
                       className: "slider-label lg-label",
@@ -65556,56 +65625,6 @@
                         }),
                       ],
                     }),
-                    (0, jsxRuntime.jsxs)("div", {
-                      className: "setting-step",
-                      children: [
-                        (0, jsxRuntime.jsxs)("div", {
-                          className: "step-item",
-                          children: [
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "step-item-icon",
-                              children: (0, jsxRuntime.jsx)(ya, {}),
-                            }),
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "step-item-title current",
-                              children: a("setting_guide_step_1"),
-                            }),
-                          ],
-                        }),
-                        (0, jsxRuntime.jsxs)("div", {
-                          className: "step-item",
-                          children: [
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "step-item-icon",
-                              children: (0, jsxRuntime.jsx)("div", {
-                                className: "step-num",
-                                children: "2",
-                              }),
-                            }),
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "step-item-title",
-                              children: a("setting_guide_step_2"),
-                            }),
-                          ],
-                        }),
-                        (0, jsxRuntime.jsxs)("div", {
-                          className: "step-item",
-                          children: [
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "step-item-icon",
-                              children: (0, jsxRuntime.jsx)("div", {
-                                className: "step-num",
-                                children: "3",
-                              }),
-                            }),
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "step-item-title",
-                              children: a("setting_guide_step_3"),
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
                   ],
                 }),
                 (0, jsxRuntime.jsx)("div", {
@@ -65791,11 +65810,11 @@
                                             },
                                           }),
                                         ),
-                                        i("/setting/setting-signup");
+                                        extensionClient.toggleSlider();
                                     }),
                                   children: [
                                     (0, jsxRuntime.jsx)("span", {
-                                      children: a("setting_guide_next"),
+                                      children: a("modalConfirm"),
                                     }),
                                     (0, jsxRuntime.jsx)(Ca, {}),
                                   ],
@@ -65829,6 +65848,8 @@
         const Xy = dependencies.Xy;
         const an = dependencies.an;
         const classNames = dependencies.classNames;
+        const extensionClient = dependencies.extensionClient;
+        const immersiveTranslator = dependencies.immersiveTranslator;
         const jsxRuntime = dependencies.jsxRuntime;
         const so = dependencies.so;
         const useApiClient = dependencies.useApiClient;
@@ -65856,13 +65877,20 @@
                     key: "subtitle",
                     value: e,
                   });
-                  yield s(r, !0),
-                    o(),
-                    n &&
-                      a.setAttributes({
-                        native: t.translation,
-                        target: e,
-                      });
+                  yield s(r, !0);
+                  o();
+                  immersiveTranslator.enabled && (yield immersiveTranslator.reload());
+                  extensionClient.emit("forward", ["background"], {
+                    name: "fulltext-translation-reload",
+                    body: {
+                      reason: "source-language-change",
+                    },
+                  });
+                  n &&
+                    a.setAttributes({
+                      native: t.translation,
+                      target: e,
+                    });
                 }),
                 new Promise((e, t) => {
                   var n = (e) => {
@@ -66764,60 +66792,7 @@
                         }),
                       ),
                     }),
-                  (0, jsxRuntime.jsxs)("div", {
-                    id: "lexihalo-selection-cache-host",
-                    children: [
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "slider-label lg-label",
-                        children: "缓存管理",
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "item-slider-group",
-                        children: (0, jsxRuntime.jsxs)("div", {
-                          className: "item-slider",
-                          children: [
-                            (0, jsxRuntime.jsxs)("div", {
-                              className: "item-slider-content",
-                              children: [
-                                (0, jsxRuntime.jsx)("div", {
-                                  className: "item-left",
-                                  children: (0, jsxRuntime.jsx)("span", {
-                                    children: "划词翻译缓存",
-                                  }),
-                                }),
-                                (0, jsxRuntime.jsx)("div", {
-                                  className: "item-right",
-                                  children: (0, jsxRuntime.jsx)("div", {
-                                    className: "right-link",
-                                    "data-lexihalo-cache-scope": "selection",
-                                    onClick: (e) => {
-                                      e.stopPropagation(),
-                                        window.lexihaloClearScopedCache
-                                          ? window.lexihaloClearScopedCache("selection")
-                                          : window.postMessage(
-                                              {
-                                                eventName: "lexihalo:cache-clear-request",
-                                                scope: "selection",
-                                              },
-                                              "*",
-                                            );
-                                    },
-                                    children: (0, jsxRuntime.jsx)("span", {
-                                      children: "清理",
-                                    }),
-                                  }),
-                                }),
-                              ],
-                            }),
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "item-slider-des",
-                              children: "仅清除划词、句子和词典回退翻译缓存",
-                            }),
-                          ],
-                        }),
-                      }),
-                    ],
-                  }),
+                  null,
                   (0, jsxRuntime.jsxs)("div", {
                     className: "bottom-tips",
                     children: [
@@ -67330,6 +67305,172 @@
                                   children: (0, jsxRuntime.jsx)("div", {
                                     className: "t-icon icon-20",
                                     children: (0, jsxRuntime.jsx)(Ca, {}),
+                                  }),
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
+                        (0, jsxRuntime.jsxs)("div", {
+                          className: "slider-item-group",
+                          id: "lexihalo-global-cache-group",
+                          children: [
+                            (0, jsxRuntime.jsx)("div", {
+                              className: "group-label",
+                              children: "缓存管理",
+                            }),
+                            (0, jsxRuntime.jsxs)("div", {
+                              className: "slider-item",
+                              style: {
+                                cursor: "default",
+                              },
+                              children: [
+                                (0, jsxRuntime.jsxs)("div", {
+                                  className: "label",
+                                  children: [
+                                    (0, jsxRuntime.jsx)("div", {
+                                      className: "t-icon icon-20",
+                                      children: (0, jsxRuntime.jsx)(ua, {}),
+                                    }),
+                                    (0, jsxRuntime.jsxs)("div", {
+                                      children: [
+                                        (0, jsxRuntime.jsx)("div", {
+                                          className: "name",
+                                          children: "一键清理所有缓存",
+                                        }),
+                                        (0, jsxRuntime.jsx)("div", {
+                                          className: "tips",
+                                          children:
+                                            "彻底清除双语字幕、网页沉浸式翻译、划词释义与快速翻译全部缓存",
+                                        }),
+                                      ],
+                                    }),
+                                  ],
+                                }),
+                                (0, jsxRuntime.jsx)("div", {
+                                  className: "right-action",
+                                  children: (0, jsxRuntime.jsx)("div", {
+                                    className: "right-link",
+                                    "data-lexihalo-cache-scope": "all",
+                                    onClick: (e) => {
+                                      e.stopPropagation();
+                                      window.lexihaloClearScopedCache
+                                        ? window.lexihaloClearScopedCache("all")
+                                        : window.postMessage(
+                                            {
+                                              eventName: "lexihalo:cache-clear-request",
+                                              scope: "all",
+                                            },
+                                            "*",
+                                          );
+                                    },
+                                    children: (0, jsxRuntime.jsx)("span", {
+                                      children: "清理全部",
+                                    }),
+                                  }),
+                                }),
+                              ],
+                            }),
+                            (0, jsxRuntime.jsxs)("div", {
+                              className: "slider-item",
+                              style: {
+                                cursor: "default",
+                              },
+                              children: [
+                                (0, jsxRuntime.jsxs)("div", {
+                                  className: "label",
+                                  children: [
+                                    (0, jsxRuntime.jsx)("div", {
+                                      className: "t-icon icon-20 red-icon",
+                                      children: (0, jsxRuntime.jsx)(xi, {}),
+                                    }),
+                                    (0, jsxRuntime.jsxs)("div", {
+                                      children: [
+                                        (0, jsxRuntime.jsx)("div", {
+                                          className: "name",
+                                          children: "重新载入当前字幕",
+                                        }),
+                                        (0, jsxRuntime.jsx)("div", {
+                                          className: "tips",
+                                          children:
+                                            "重置页面字幕并优先复用本机 AI 缓存，不重新下载字幕轨道",
+                                        }),
+                                      ],
+                                    }),
+                                  ],
+                                }),
+                                (0, jsxRuntime.jsx)("div", {
+                                  className: "right-action",
+                                  children: (0, jsxRuntime.jsx)("div", {
+                                    className: "right-link",
+                                    "data-lexihalo-cache-scope": "subtitle",
+                                    onClick: (e) => {
+                                      e.stopPropagation();
+                                      window.lexihaloClearScopedCache
+                                        ? window.lexihaloClearScopedCache("subtitle")
+                                        : window.postMessage(
+                                            {
+                                              eventName: "lexihalo:cache-clear-request",
+                                              scope: "subtitle",
+                                            },
+                                            "*",
+                                          );
+                                    },
+                                    children: (0, jsxRuntime.jsx)("span", {
+                                      children: "清理",
+                                    }),
+                                  }),
+                                }),
+                              ],
+                            }),
+                            (0, jsxRuntime.jsxs)("div", {
+                              className: "slider-item",
+                              style: {
+                                cursor: "default",
+                              },
+                              children: [
+                                (0, jsxRuntime.jsxs)("div", {
+                                  className: "label",
+                                  children: [
+                                    (0, jsxRuntime.jsx)("div", {
+                                      className: "t-icon icon-20 red-icon",
+                                      children: (0, jsxRuntime.jsx)(xi, {}),
+                                    }),
+                                    (0, jsxRuntime.jsxs)("div", {
+                                      children: [
+                                        (0, jsxRuntime.jsx)("div", {
+                                          className: "name",
+                                          children: "彻底清除 AI 字幕缓存",
+                                        }),
+                                        (0, jsxRuntime.jsx)("div", {
+                                          className: "tips",
+                                          children:
+                                            "删除持久 AI 字幕分段修复与翻译结果，下次播放时重新请求模型",
+                                        }),
+                                      ],
+                                    }),
+                                  ],
+                                }),
+                                (0, jsxRuntime.jsx)("div", {
+                                  className: "right-action",
+                                  children: (0, jsxRuntime.jsx)("div", {
+                                    className: "right-link",
+                                    "data-lexihalo-cache-scope": "ai-subtitle",
+                                    onClick: (e) => {
+                                      e.stopPropagation();
+                                      window.lexihaloClearScopedCache
+                                        ? window.lexihaloClearScopedCache("ai-subtitle")
+                                        : window.postMessage(
+                                            {
+                                              eventName: "lexihalo:cache-clear-request",
+                                              scope: "ai-subtitle",
+                                            },
+                                            "*",
+                                          );
+                                    },
+                                    children: (0, jsxRuntime.jsx)("span", {
+                                      children: "清理",
+                                    }),
                                   }),
                                 }),
                               ],
@@ -67899,60 +68040,6 @@
                   (0, jsxRuntime.jsx)("div", {
                     className: classNames()("engine-select-card-gradient", d),
                   }),
-                  (0, jsxRuntime.jsxs)("div", {
-                    id: "lexihalo-quick-cache-host",
-                    children: [
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "slider-label lg-label",
-                        children: "缓存管理",
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "item-slider-group",
-                        children: (0, jsxRuntime.jsxs)("div", {
-                          className: "item-slider",
-                          children: [
-                            (0, jsxRuntime.jsxs)("div", {
-                              className: "item-slider-content",
-                              children: [
-                                (0, jsxRuntime.jsx)("div", {
-                                  className: "item-left",
-                                  children: (0, jsxRuntime.jsx)("span", {
-                                    children: "快速翻译缓存",
-                                  }),
-                                }),
-                                (0, jsxRuntime.jsx)("div", {
-                                  className: "item-right",
-                                  children: (0, jsxRuntime.jsx)("div", {
-                                    className: "right-link",
-                                    "data-lexihalo-cache-scope": "quick",
-                                    onClick: (e) => {
-                                      e.stopPropagation(),
-                                        window.lexihaloClearScopedCache
-                                          ? window.lexihaloClearScopedCache("quick")
-                                          : window.postMessage(
-                                              {
-                                                eventName: "lexihalo:cache-clear-request",
-                                                scope: "quick",
-                                              },
-                                              "*",
-                                            );
-                                    },
-                                    children: (0, jsxRuntime.jsx)("span", {
-                                      children: "清理",
-                                    }),
-                                  }),
-                                }),
-                              ],
-                            }),
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "item-slider-des",
-                              children: "仅清除快速翻译窗口使用的缓存",
-                            }),
-                          ],
-                        }),
-                      }),
-                    ],
-                  }),
                   (0, jsxRuntime.jsx)("div", {
                     className: "engine-tab",
                     children: [
@@ -68065,6 +68152,8 @@
         const Ta = dependencies.Ta;
         const an = dependencies.an;
         const classNames = dependencies.classNames;
+        const extensionClient = dependencies.extensionClient;
+        const immersiveTranslator = dependencies.immersiveTranslator;
         const jsxRuntime = dependencies.jsxRuntime;
         const so = dependencies.so;
         const useApiClient = dependencies.useApiClient;
@@ -68092,13 +68181,20 @@
                     key: "translation",
                     value: e,
                   });
-                  yield o(r, !0),
-                    a(),
-                    n &&
-                      i.setAttributes({
-                        native: e,
-                        target: t.subtitle,
-                      });
+                  yield o(r, !0);
+                  a();
+                  immersiveTranslator.enabled && (yield immersiveTranslator.reload());
+                  extensionClient.emit("forward", ["background"], {
+                    name: "fulltext-translation-reload",
+                    body: {
+                      reason: "translation-language-change",
+                    },
+                  });
+                  n &&
+                    i.setAttributes({
+                      native: e,
+                      target: t.subtitle,
+                    });
                 }),
                 new Promise((e, t) => {
                   var n = (e) => {
@@ -69718,6 +69814,7 @@
   };
 })();
 const VALID_CACHE_SCOPES = new Set([
+  "all",
   "ai-subtitle",
   "subtitle",
   "subtitle-refresh",
@@ -69793,7 +69890,13 @@ function requestCacheClear(scope) {
 }
 
 function reloadCaptions(scope) {
-  if (scope !== "ai-subtitle" && scope !== "subtitle" && scope !== "subtitle-refresh") return;
+  if (
+    scope !== "all" &&
+    scope !== "ai-subtitle" &&
+    scope !== "subtitle" &&
+    scope !== "subtitle-refresh"
+  )
+    return;
   window.postMessage({ eventName: "edvideo:caption.purgeAndReload", scope }, "*");
   window.dispatchEvent(
     new CustomEvent("edvideo:caption.purgeAndReload", {

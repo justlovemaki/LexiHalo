@@ -55,14 +55,22 @@ const mainBundles = {
     "fulltext-whitelist",
     "重新载入当前字幕",
     "彻底清除 AI 字幕缓存",
+    "translation-language-change",
+    "source-language-change",
   ],
   "assets/edvideo-main.js": [
     "LexiHalo readable single bundle: video",
     "captionProvider",
     "edvideo:caption.purgeAndReload",
     "aiInflightRequests",
+    "baselineFallbackForPreload",
     "stableStart",
     "translationGeneration",
+    "resetForLanguageChange",
+    "suppressNativeCaptions",
+    "[sourceLanguage, translationLanguage]",
+    "distinguish Simplified and Traditional Chinese subtitles",
+    "try the signed YouTube caption URL before waiting for interception",
     "retryDelayMs",
     "等待 AI 翻译",
     "originalText",
@@ -168,6 +176,16 @@ execFileSync(
 const after = hashFiles();
 if (JSON.stringify(before) !== JSON.stringify(after))
   fail("Readable bundle build is not reproducible");
+
+// Verify dist directory integrity
+const distDir = path.join(root, "dist");
+if (!fs.existsSync(distDir)) fail("Missing dist/ directory after build");
+if (!fs.existsSync(path.join(distDir, "manifest.json"))) fail("Missing dist/manifest.json");
+for (const file of expected) {
+  if (!fs.existsSync(path.join(distDir, file))) {
+    fail(`Missing file in dist/: ${file}`);
+  }
+}
 
 const browserReportPath = path.join(
   root,

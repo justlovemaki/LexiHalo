@@ -4,6 +4,60 @@
   const provider = window.captionProvider;
   if (!provider) return;
 
+  let youtubeNativeCaptionWasEnabled = false;
+  let youtubeNativeCaptionSuppressionActive = false;
+  let youtubeNativeCaptionObserver = null;
+  const getYouTubeCaptionControls = () => {
+    if (provider.platform !== "youtube") return {};
+    const player = document.querySelector(".html5-video-player");
+    return {
+      player,
+      button: player?.querySelector(".ytp-subtitles-button"),
+    };
+  };
+  const setYouTubeNativeCaption = (enabled) => {
+    const { player, button } = getYouTubeCaptionControls();
+    if (!player || !button || typeof player.toggleSubtitles !== "function")
+      return false;
+    const current = button.getAttribute("aria-pressed") === "true";
+    if (current !== enabled) player.toggleSubtitles(enabled);
+    return true;
+  };
+  provider.suppressNativeCaptions = () => {
+    if (provider.platform !== "youtube") return;
+    const { button } = getYouTubeCaptionControls();
+    if (!button) return;
+    if (!youtubeNativeCaptionSuppressionActive) {
+      youtubeNativeCaptionWasEnabled =
+        button.getAttribute("aria-pressed") === "true";
+      youtubeNativeCaptionSuppressionActive = true;
+      youtubeNativeCaptionObserver?.disconnect();
+      youtubeNativeCaptionObserver = new MutationObserver(() => {
+        if (
+          youtubeNativeCaptionSuppressionActive &&
+          provider.strategy !== "none" &&
+          button.getAttribute("aria-pressed") === "true"
+        ) {
+          youtubeNativeCaptionWasEnabled = true;
+          setYouTubeNativeCaption(false);
+        }
+      });
+      youtubeNativeCaptionObserver.observe(button, {
+        attributes: true,
+        attributeFilter: ["aria-pressed"],
+      });
+    }
+    setYouTubeNativeCaption(false);
+  };
+  provider.restore = () => {
+    if (provider.platform !== "youtube") return;
+    youtubeNativeCaptionSuppressionActive = false;
+    youtubeNativeCaptionObserver?.disconnect();
+    youtubeNativeCaptionObserver = null;
+    if (youtubeNativeCaptionWasEnabled) setYouTubeNativeCaption(true);
+    youtubeNativeCaptionWasEnabled = false;
+  };
+
   const isAiEngine = (engine) =>
     Boolean(
       engine?.model &&
@@ -35,6 +89,7 @@
     maxConcurrent: 2,
     retryDelayMs: 2000,
     seekSettleMs: 0,
+    baselineFallbackForPreload: true,
   };
 
   const cancelGeneration = () => {
@@ -219,7 +274,15 @@
       provider.pretransFailedAt = 0; // Clear failure lockout immediately on seek!
       cancelGeneration();
     }
-    return originalDrivePretranslate();
+    const result = originalDrivePretranslate();
+    // Streaming/text-track platforms already run this fallback from the
+    // provider tick. Preload platforms (notably YouTube and Prime Video) were
+    // excluded, so AI captions had no immediate Google baseline while waiting
+    // for the higher-quality model result.
+    if (!provider.hasExternalCorpus && isAiEngine(provider.engine)) {
+      provider.backfillBaseline();
+    }
+    return result;
   };
 
   provider.backfillBaseline = () => {
@@ -240,7 +303,7 @@
         }))
       : lines;
 
-  const purge = (scope) => {
+  const purge = (scope, { reload = true } = {}) => {
     const cache = provider.captionCache?.cache;
     let restored = false;
     if (cache instanceof Map && cache.size) {
@@ -257,10 +320,15 @@
       provider.captionCache?.clear?.();
     }
     provider.domTransCache?.clear?.();
+    provider.domTransInflight?.clear?.();
     provider.domTokensCache?.clear?.();
+    provider.domTokensInflight?.clear?.();
     provider.translatingIdx = [];
     provider.lastPretransCurrent = -1;
     provider.seekFirstBatch = true;
+    provider.pretransFailedAt = 0;
+    provider.baselineFailedAt = 0;
+    provider.tokenizeFailedAt = 0;
     provider.translationGeneration += 1;
     provider.aiSeekSettledAt = 0;
     provider.aiInflightRequests = 0;
@@ -273,10 +341,17 @@
         forceUpdate: true,
         cacheScope: scope,
       });
-    } else {
+    } else if (reload) {
       provider.event?.emit?.("caption:reload");
     }
   };
+
+  // DualCaptionApp calls this after either the global settings or the in-player
+  // language selector changes. Invalidate language-bound translations before
+  // its own effect reloads the selected source track; emitting caption:reload
+  // here as well would start a duplicate, racing load.
+  provider.resetForLanguageChange = (scope = "language-change") =>
+    purge(scope, { reload: false });
 
   window.addEventListener("edvideo:caption.purgeAndReload", (event) =>
     purge(event?.detail?.scope),
@@ -379,10 +454,17 @@
       const num = index + 1;
       const time = `${formatTimestamp(line.start)} --> ${formatTimestamp(line.end)}`;
       const translation = (line.AITranslation || line.translation || "").trim();
-      const original = (line.originalText || line.text || "").trim();
-      let text = original;
-      if (translation && translation !== original) {
-        text = `${translation}\r\n${original}`;
+      // `text` is replaced with the AI-repaired source after translation;
+      // `originalText` intentionally keeps the raw caption for cache resets.
+      const repairedSource = (
+        line.repairedText ||
+        line.text ||
+        line.originalText ||
+        ""
+      ).trim();
+      let text = repairedSource;
+      if (translation && translation !== repairedSource) {
+        text = `${translation}\r\n${repairedSource}`;
       }
       return `${num}\r\n${time}\r\n${text}`;
     });

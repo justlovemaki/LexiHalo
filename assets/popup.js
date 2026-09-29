@@ -922,24 +922,11 @@
             h[e] = new m(e, 1, !1, e.toLowerCase(), null, !0, !0);
           });
         var y = n.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED,
-          RESTRICTED_URL_PATTERNS = Symbol.for("react.element"),
-          detectUiLanguage = Symbol.for("react.portal"),
-          openExtensionPage = Symbol.for("react.fragment"),
-          PopupApp = (() => {
-            let lexihaloPopupAppSource;
-            return (...componentArgs) => {
-              lexihaloPopupAppSource =
-                lexihaloPopupAppSource ||
-                recoverPopupApp({
-                  React: a,
-                  englishTranslations: u,
-                  jsxRuntime: n,
-                  translations: y,
-                });
-              return lexihaloPopupAppSource(...componentArgs);
-            };
-          })(),
-          popupRoot = Symbol.for("react.profiler"),
+          T = Symbol.for("react.element"),
+          k = Symbol.for("react.portal"),
+          S = Symbol.for("react.fragment"),
+          w = Symbol.for("react.strict_mode"),
+          C = Symbol.for("react.profiler"),
           A = Symbol.for("react.provider"),
           P = Symbol.for("react.context"),
           z = Symbol.for("react.forward_ref"),
@@ -1073,13 +1060,13 @@
           if ("function" == typeof e) return e.displayName || e.name || null;
           if ("string" == typeof e) return e;
           switch (e) {
-            case openExtensionPage:
+            case S:
               return "Fragment";
-            case detectUiLanguage:
+            case k:
               return "Portal";
-            case popupRoot:
+            case C:
               return "Profiler";
-            case PopupApp:
+            case w:
               return "StrictMode";
             case x:
               return "Suspense";
@@ -1141,7 +1128,7 @@
             case 16:
               return q(t);
             case 8:
-              return t === PopupApp ? "StrictMode" : "Mode";
+              return t === w ? "StrictMode" : "Mode";
             case 22:
               return "Offscreen";
             case 12:
@@ -3750,7 +3737,7 @@
           }
           function _(e, t, i, n) {
             var o = i.type;
-            return o === openExtensionPage
+            return o === S
               ? u(e, t, i.props.children, n, i.key)
               : null !== t &&
                   (t.elementType === o ||
@@ -3778,13 +3765,13 @@
               return ((t = L_("" + t, e.mode, i)).return = e), t;
             if ("object" == typeof t && null !== t) {
               switch (t.$$typeof) {
-                case RESTRICTED_URL_PATTERNS:
+                case T:
                   return (
                     ((i = R_(t.type, t.key, t.props, null, e.mode, i)).ref = bo(e, null, t)),
                     (i.return = e),
                     i
                   );
-                case detectUiLanguage:
+                case k:
                   return ((t = M_(t, e.mode, i)).return = e), t;
                 case E:
                   return d(e, (0, t._init)(t._payload), i);
@@ -3800,9 +3787,9 @@
               return null !== a ? null : l(e, t, "" + i, n);
             if ("object" == typeof i && null !== i) {
               switch (i.$$typeof) {
-                case RESTRICTED_URL_PATTERNS:
+                case T:
                   return i.key === a ? _(e, t, i, n) : null;
-                case detectUiLanguage:
+                case k:
                   return i.key === a ? c(e, t, i, n) : null;
                 case E:
                   return p(e, t, (a = i._init)(i._payload), n);
@@ -3817,9 +3804,9 @@
               return l(t, (e = e.get(i) || null), "" + n, a);
             if ("object" == typeof n && null !== n) {
               switch (n.$$typeof) {
-                case RESTRICTED_URL_PATTERNS:
+                case T:
                   return _(t, (e = e.get(null === n.key ? i : n.key) || null), n, a);
-                case detectUiLanguage:
+                case k:
                   return c(t, (e = e.get(null === n.key ? i : n.key) || null), n, a);
                 case E:
                   return g(e, t, i, (0, n._init)(n._payload), a);
@@ -3916,17 +3903,17 @@
             if (
               ("object" == typeof r &&
                 null !== r &&
-                r.type === openExtensionPage &&
+                r.type === S &&
                 null === r.key &&
                 (r = r.props.children),
               "object" == typeof r && null !== r)
             ) {
               switch (r.$$typeof) {
-                case RESTRICTED_URL_PATTERNS:
+                case T:
                   e: {
                     for (var _ = r.key, c = o; null !== c; ) {
                       if (c.key === _) {
-                        if ((_ = r.type) === openExtensionPage) {
+                        if ((_ = r.type) === S) {
                           if (7 === c.tag) {
                             i(n, c.sibling), ((o = a(c, r.props.children)).return = n), (n = o);
                             break e;
@@ -3949,14 +3936,14 @@
                       }
                       t(n, c), (c = c.sibling);
                     }
-                    r.type === openExtensionPage
+                    r.type === S
                       ? (((o = F_(r.props.children, n.mode, l, r.key)).return = n), (n = o))
                       : (((l = R_(r.type, r.key, r.props, null, n.mode, l)).ref = bo(n, o, r)),
                         (l.return = n),
                         (n = l));
                   }
                   return s(n);
-                case detectUiLanguage:
+                case k:
                   e: {
                     for (c = r.key; null !== o; ) {
                       if (o.key === c) {
@@ -7615,194 +7602,6 @@
                   (r = e.pendingLanes),
                   1 & r ? (e === $l ? Ql++ : ((Ql = 0), ($l = e))) : (Ql = 0),
                   qa();
-                function recoverPopupApp(dependencies) {
-                  const React = dependencies.React;
-                  const englishTranslations = dependencies.englishTranslations;
-                  const jsxRuntime = dependencies.jsxRuntime;
-                  const translations = dependencies.translations;
-                  const RESTRICTED_URL_PATTERNS = [
-                    /^chrome(-extension|-untrusted|-search|-devtools)?:\/\//i,
-                    /^edge:\/\//i,
-                    /^about:/i,
-                    /^moz-extension:\/\//i,
-                    /^safari-web-extension:\/\//i,
-                    /^view-source:/i,
-                    /^devtools:\/\//i,
-                    /^https?:\/\/chromewebstore\.google\.com/i,
-                    /^https?:\/\/chrome\.google\.com\/webstore/i,
-                    /^https?:\/\/addons\.mozilla\.org/i,
-                    /^https?:\/\/microsoftedge\.microsoft\.com\/addons/i,
-                    /^https?:\/\/www\.google\.com\/_\/chrome\/newtab/i,
-                  ];
-                  const detectUiLanguage = () => {
-                    let language = "en";
-                    try {
-                      language = chrome.i18n?.getUILanguage?.() || navigator.language || "en";
-                    } catch {}
-                    if (translations[language]) return language;
-                    const normalized = language.toLowerCase();
-                    if (normalized.startsWith("zh")) {
-                      return /hant|tw|hk|mo/.test(normalized) ? "zh-Hant" : "zh-CN";
-                    }
-                    const base = language.split("-")[0];
-                    return translations[base] ? base : "en";
-                  };
-                  const openExtensionPage = (url) => {
-                    if (!/^https?:/i.test(url)) {
-                      try {
-                        chrome.tabs.create({
-                          url,
-                        });
-                      } catch {}
-                    }
-                    window.close();
-                  };
-                  const PopupApp = () => {
-                    const [e, t] = (0, React.useState)(void 0),
-                      [i, o] = (0, React.useState)(detectUiLanguage),
-                      [r, s] = (0, React.useState)(null);
-                    (0, React.useEffect)(() => {
-                      let e = !0;
-                      return (
-                        new Promise((e) => {
-                          try {
-                            chrome.tabs.query(
-                              {
-                                active: !0,
-                                currentWindow: !0,
-                              },
-                              (t) => {
-                                var i;
-                                chrome.runtime.lastError,
-                                  e(null == (i = null == t ? void 0 : t[0]) ? void 0 : i.url);
-                              },
-                            );
-                          } catch (t) {
-                            e(void 0);
-                          }
-                        }).then(
-                          (i) =>
-                            e &&
-                            t(
-                              ((e) => {
-                                if (!e) return "browser";
-                                if (RESTRICTED_URL_PATTERNS.some((t) => t.test(e)))
-                                  return "browser";
-                                try {
-                                  return (t = new URL(e).host) &&
-                                    ("learn.trancy.org" === t ||
-                                      "localhost" === t ||
-                                      t.startsWith("localhost:") ||
-                                      "127.0.0.1" === t ||
-                                      t.startsWith("127.0.0.1:"))
-                                    ? "dashboard"
-                                    : null;
-                                } catch (e) {
-                                  return "browser";
-                                }
-                                var t;
-                              })(i),
-                            ),
-                        ),
-                        new Promise((e) => {
-                          let t = null;
-                          const i = (i) => {
-                              clearTimeout(n);
-                              try {
-                                null == t || t.disconnect();
-                              } catch (e) {}
-                              e(i);
-                            },
-                            n = setTimeout(() => i(null), 3e3);
-                          try {
-                            (t = chrome.runtime.connect({
-                              name: "trancy-popup-context",
-                            })),
-                              t.onMessage.addListener((e) => {
-                                i(e && "object" == typeof e ? e : null);
-                              }),
-                              t.onDisconnect.addListener(() => {
-                                chrome.runtime.lastError, i(null);
-                              });
-                          } catch (e) {
-                            i(null);
-                          }
-                        }).then((t) => {
-                          e && t && (s(t), t.uiLang && translations[t.uiLang] && o(t.uiLang));
-                        }),
-                        () => {
-                          e = !1;
-                        }
-                      );
-                    }, []);
-                    const l = (e) => {
-                        var t;
-                        return (
-                          (null == (t = translations[i]) ? void 0 : t[e]) ||
-                          englishTranslations[e] ||
-                          e
-                        );
-                      },
-                      _ = "dashboard" === e;
-                    return (0, jsxRuntime.jsxs)("div", {
-                      className: "trancy-popup " + (void 0 !== e ? "ready" : ""),
-                      children: [
-                        (0, jsxRuntime.jsxs)("div", {
-                          className: "trancy-popup-head",
-                          children: [
-                            (0, jsxRuntime.jsx)("img", {
-                              className: "trancy-popup-logo",
-                              src: "assets/icons/ic48.png",
-                              alt: "",
-                            }),
-                            (0, jsxRuntime.jsx)("span", {
-                              className: "trancy-popup-brand",
-                              children: "LexiHalo",
-                            }),
-                          ],
-                        }),
-                        (0, jsxRuntime.jsx)("div", {
-                          className: "trancy-popup-title",
-                          children: l(_ ? "popup_dashboard_title" : "popup_unsupported_title"),
-                        }),
-                        (0, jsxRuntime.jsx)("div", {
-                          className: "trancy-popup-desc",
-                          children: l(_ ? "popup_dashboard_des" : "popup_unsupported_des"),
-                        }),
-                        (0, jsxRuntime.jsx)("div", {
-                          className: "trancy-popup-actions",
-                          children: _
-                            ? (0, jsxRuntime.jsx)("button", {
-                                className: "trancy-popup-btn primary",
-                                onClick: () => window.close(),
-                                children: l("popup_got_it"),
-                              })
-                            : (0, jsxRuntime.jsxs)(jsxRuntime.Fragment, {
-                                children: [
-                                  (0, jsxRuntime.jsx)("button", {
-                                    className: "trancy-popup-btn primary",
-                                    onClick: () =>
-                                      openExtensionPage(
-                                        (null == r ? void 0 : r.dashboardUrl) || "byok.html",
-                                      ),
-                                    children: l("popup_open_dashboard"),
-                                  }),
-                                  (0, jsxRuntime.jsx)("button", {
-                                    className: "trancy-popup-btn",
-                                    onClick: () =>
-                                      openExtensionPage(
-                                        (null == r ? void 0 : r.guideUrl) || "byok.html",
-                                      ),
-                                    children: l("popup_user_guide"),
-                                  }),
-                                ],
-                              }),
-                        }),
-                      ],
-                    });
-                  };
-                  return PopupApp;
-                }
               })(e, t, i, n);
           } finally {
             (Pl.transition = a), (vt = n);
@@ -8064,13 +7863,13 @@
           else if ("string" == typeof e) s = 5;
           else
             e: switch (e) {
-              case openExtensionPage:
+              case S:
                 return F_(i.children, a, r, t);
-              case PopupApp:
+              case w:
                 (s = 8), (a |= 8);
                 break;
-              case popupRoot:
-                return ((e = I_(12, i, t, 2 | a)).elementType = popupRoot), (e.lanes = r), e;
+              case C:
+                return ((e = I_(12, i, t, 2 | a)).elementType = C), (e.lanes = r), e;
               case x:
                 return ((e = I_(13, i, t, a)).elementType = x), (e.lanes = r), e;
               case B:
@@ -8788,7 +8587,7 @@
             return (function (e, t, i) {
               var n = 3 < arguments.length && void 0 !== arguments[3] ? arguments[3] : null;
               return {
-                $$typeof: detectUiLanguage,
+                $$typeof: k,
                 key: null == n ? null : "" + n,
                 children: e,
                 containerInfo: t,
@@ -8964,7 +8763,7 @@
       ),
       und: {},
     },
-    T = [
+    RESTRICTED_URL_PATTERNS = [
       /^chrome(-extension|-untrusted|-search|-devtools)?:\/\//i,
       /^edge:\/\//i,
       /^about:/i,
@@ -8978,7 +8777,7 @@
       /^https?:\/\/microsoftedge\.microsoft\.com\/addons/i,
       /^https?:\/\/www\.google\.com\/_\/chrome\/newtab/i,
     ],
-    k = () => {
+    detectUiLanguage = () => {
       var e, t;
       let i = "en";
       try {
@@ -8995,7 +8794,7 @@
       const a = i.split("-")[0];
       return y[a] ? a : "en";
     },
-    S = (e) => {
+    openExtensionPage = (e) => {
       if (/^https?:/i.test(e)) return void window.close();
       try {
         chrome.tabs.create({
@@ -9004,11 +8803,69 @@
       } catch (t) {}
       window.close();
     },
-    w = () => {
-      const [e, t] = (0, a.useState)(void 0),
-        [i, o] = (0, a.useState)(k),
-        [r, s] = (0, a.useState)(null);
-      (0, a.useEffect)(() => {
+    PopupApp = (() => {
+      let lexihaloPopupAppSource;
+      return (...componentArgs) => {
+        lexihaloPopupAppSource =
+          lexihaloPopupAppSource ||
+          recoverPopupApp({
+            React: a,
+            englishTranslations: u,
+            jsxRuntime: n,
+            translations: y,
+          });
+        return lexihaloPopupAppSource(...componentArgs);
+      };
+    })(),
+    popupRoot = document.getElementById("trancy-popup-root");
+  popupRoot && o.createRoot(popupRoot).render((0, n.jsx)(PopupApp, {}));
+  function recoverPopupApp(dependencies) {
+    const React = dependencies.React;
+    const englishTranslations = dependencies.englishTranslations;
+    const jsxRuntime = dependencies.jsxRuntime;
+    const translations = dependencies.translations;
+    const RESTRICTED_URL_PATTERNS = [
+      /^chrome(-extension|-untrusted|-search|-devtools)?:\/\//i,
+      /^edge:\/\//i,
+      /^about:/i,
+      /^moz-extension:\/\//i,
+      /^safari-web-extension:\/\//i,
+      /^view-source:/i,
+      /^devtools:\/\//i,
+      /^https?:\/\/chromewebstore\.google\.com/i,
+      /^https?:\/\/chrome\.google\.com\/webstore/i,
+      /^https?:\/\/addons\.mozilla\.org/i,
+      /^https?:\/\/microsoftedge\.microsoft\.com\/addons/i,
+      /^https?:\/\/www\.google\.com\/_\/chrome\/newtab/i,
+    ];
+    const detectUiLanguage = () => {
+      let language = "en";
+      try {
+        language = chrome.i18n?.getUILanguage?.() || navigator.language || "en";
+      } catch {}
+      if (translations[language]) return language;
+      const normalized = language.toLowerCase();
+      if (normalized.startsWith("zh")) {
+        return /hant|tw|hk|mo/.test(normalized) ? "zh-Hant" : "zh-CN";
+      }
+      const base = language.split("-")[0];
+      return translations[base] ? base : "en";
+    };
+    const openExtensionPage = (url) => {
+      if (!/^https?:/i.test(url)) {
+        try {
+          chrome.tabs.create({
+            url,
+          });
+        } catch {}
+      }
+      window.close();
+    };
+    const PopupApp = () => {
+      const [e, t] = (0, React.useState)(void 0),
+        [i, o] = (0, React.useState)(detectUiLanguage),
+        [r, s] = (0, React.useState)(null);
+      (0, React.useEffect)(() => {
         let e = !0;
         return (
           new Promise((e) => {
@@ -9033,7 +8890,7 @@
               t(
                 ((e) => {
                   if (!e) return "browser";
-                  if (T.some((t) => t.test(e))) return "browser";
+                  if (RESTRICTED_URL_PATTERNS.some((t) => t.test(e))) return "browser";
                   try {
                     return (t = new URL(e).host) &&
                       ("learn.trancy.org" === t ||
@@ -9074,7 +8931,7 @@
               i(null);
             }
           }).then((t) => {
-            e && t && (s(t), t.uiLang && y[t.uiLang] && o(t.uiLang));
+            e && t && (s(t), t.uiLang && translations[t.uiLang] && o(t.uiLang));
           }),
           () => {
             e = !1;
@@ -9083,62 +8940,53 @@
       }, []);
       const l = (e) => {
           var t;
-          return (null == (t = y[i]) ? void 0 : t[e]) || u[e] || e;
+          return (null == (t = translations[i]) ? void 0 : t[e]) || englishTranslations[e] || e;
         },
         _ = "dashboard" === e;
-      return (0, n.jsxs)("div", {
+      return (0, jsxRuntime.jsxs)("div", {
         className: "trancy-popup " + (void 0 !== e ? "ready" : ""),
         children: [
-          (0, n.jsxs)("div", {
+          (0, jsxRuntime.jsxs)("div", {
             className: "trancy-popup-head",
             children: [
-              (0, n.jsx)("img", {
+              (0, jsxRuntime.jsx)("img", {
                 className: "trancy-popup-logo",
                 src: "assets/icons/ic48.png",
                 alt: "",
               }),
-              (0, n.jsx)("span", {
+              (0, jsxRuntime.jsx)("span", {
                 className: "trancy-popup-brand",
                 children: "LexiHalo",
               }),
             ],
           }),
-          (0, n.jsx)("div", {
+          (0, jsxRuntime.jsx)("div", {
             className: "trancy-popup-title",
             children: l(_ ? "popup_dashboard_title" : "popup_unsupported_title"),
           }),
-          (0, n.jsx)("div", {
+          (0, jsxRuntime.jsx)("div", {
             className: "trancy-popup-desc",
             children: l(_ ? "popup_dashboard_des" : "popup_unsupported_des"),
           }),
-          (0, n.jsx)("div", {
+          (0, jsxRuntime.jsx)("div", {
             className: "trancy-popup-actions",
             children: _
-              ? (0, n.jsx)("button", {
+              ? (0, jsxRuntime.jsx)("button", {
                   className: "trancy-popup-btn primary",
                   onClick: () => window.close(),
                   children: l("popup_got_it"),
                 })
-              : (0, n.jsxs)(n.Fragment, {
-                  children: [
-                    (0, n.jsx)("button", {
-                      className: "trancy-popup-btn primary",
-                      onClick: () => S((null == r ? void 0 : r.dashboardUrl) || "byok.html"),
-                      children: l("popup_open_dashboard"),
-                    }),
-                    (0, n.jsx)("button", {
-                      className: "trancy-popup-btn",
-                      onClick: () => S((null == r ? void 0 : r.guideUrl) || "byok.html"),
-                      children: l("popup_user_guide"),
-                    }),
-                  ],
+              : (0, jsxRuntime.jsx)("button", {
+                  className: "trancy-popup-btn primary",
+                  onClick: () => window.close(),
+                  children: l("popup_got_it"),
                 }),
           }),
         ],
       });
-    },
-    C = document.getElementById("trancy-popup-root");
-  C && o.createRoot(C).render((0, n.jsx)(w, {}));
+    };
+    return PopupApp;
+  }
 })();
 
 (() => {

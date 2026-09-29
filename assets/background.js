@@ -4439,7 +4439,62 @@
         lastActionAt: 0,
         tasks: ["new-feature", "new-share"],
         config: {
-          schemes: [],
+          schemes: [
+            {
+              name: "Oxford",
+              scheme: "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {
+                en: "english",
+              },
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+            {
+              name: "Collins",
+              scheme: "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {
+                en: "english",
+              },
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+            {
+              name: "Longman",
+              scheme: "https://www.ldoceonline.com/dictionary/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {
+                en: "english",
+              },
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+            {
+              name: "Youdao",
+              scheme: "https://dict.youdao.com/w/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {},
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+          ],
           partOfSpeech: [],
           voices: [],
           PRACTICE_LIMIT: 5,
@@ -7218,7 +7273,7 @@
                 : {},
             ),
             y = "openai",
-            v = 3e4;
+            v = 12e4;
           switch (!0) {
             case "AI" === u.provider && p.indexOf("googleapis.com") > -1:
             case "Google" === u.provider: {
@@ -8472,7 +8527,7 @@
                   .join("&");
               return e + n + r;
             })(xs(p, m, g, h.endpoint), f.queryParams),
-            P = null != (s = p.endpoint.timeoutMs) ? s : 3e4,
+            P = null != (s = p.endpoint.timeoutMs) ? s : e.engine?.timeoutMs || 12e4,
             O = yield ds(_, {
               method: null != (l = p.endpoint.method) ? l : "POST",
               headers: T,
@@ -8694,7 +8749,7 @@
               s.requestHeaders,
             ),
             f = xs(o, i, l, s.endpoint),
-            y = null != (a = o.endpoint.timeoutMs) ? a : 3e4,
+            y = null != (a = o.endpoint.timeoutMs) ? a : e.engine?.timeoutMs || 12e4,
             v = yield ds(f, {
               method: "POST",
               headers: g,
@@ -8886,7 +8941,7 @@
               i.requestHeaders,
             ),
             h = xs(a, o, s, i.endpoint),
-            g = null != (r = a.endpoint.timeoutMs) ? r : 3e4,
+            g = null != (r = a.endpoint.timeoutMs) ? r : e.engine?.timeoutMs || 12e4,
             f = yield ds(h, {
               method: "POST",
               headers: m,
@@ -9954,7 +10009,7 @@
                 l = s.find((e) => e._id === i);
               l &&
                 (a = gu(gu({}, a), {
-                  engine: gu(gu({}, o), l),
+                  engine: gu(gu({}, l), o),
                 }));
             }
             if ("subtitle" === a.cacheScope && globalThis.lexihaloTranslateSubtitlesWithAi) {

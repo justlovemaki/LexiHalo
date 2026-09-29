@@ -31790,7 +31790,62 @@
         lastActionAt: 0,
         tasks: ["new-feature", "new-share"],
         config: {
-          schemes: [],
+          schemes: [
+            {
+              name: "Oxford",
+              scheme: "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {
+                en: "english",
+              },
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+            {
+              name: "Collins",
+              scheme: "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {
+                en: "english",
+              },
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+            {
+              name: "Longman",
+              scheme: "https://www.ldoceonline.com/dictionary/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {
+                en: "english",
+              },
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+            {
+              name: "Youdao",
+              scheme: "https://dict.youdao.com/w/$TEXT",
+              from: ["*"],
+              to: ["*"],
+              codes: {},
+              options: {
+                width: 450,
+                height: 750,
+                type: "popup",
+              },
+            },
+          ],
           partOfSpeech: [],
           voices: [],
           PRACTICE_LIMIT: 5,
@@ -32902,19 +32957,41 @@
       }
       getStateChunks(e) {
         return Is(this, null, function* () {
-          const { data: t } = yield this.emit("getStateChunks", ["background"], Es({}, e));
+          const { data: t } = (yield this.emit("getStateChunks", ["background"], Es({}, e))) || {
+            data: {},
+          };
           return t;
         });
       }
       getState(e) {
         return Is(this, null, function* () {
           if (this.state && !e) return this.state;
-          const { data: t } = yield this.emit("getState", ["background"]);
+          const { data: t } = (yield this.emit("getState", ["background"])) || {
+            data: {},
+          };
           return (this.state = t), t;
         });
       }
       getRuntime() {
-        return this.emit("runtime", ["background"]);
+        return Is(this, null, function* () {
+          try {
+            const res = yield this.emit("runtime", ["background"]);
+            if (res && res.data && res.data.version) return res;
+          } catch (_) {}
+          const ver =
+            (typeof chrome !== "undefined" && chrome.runtime?.getManifest?.()?.version) || "8.3.0";
+          const sc =
+            (typeof chrome !== "undefined" && chrome.runtime?.getURL?.("").slice(0, -1)) || "";
+          const rid = (typeof chrome !== "undefined" && chrome.runtime?.id) || "";
+          return {
+            message: "ok",
+            data: {
+              version: ver,
+              scheme: sc,
+              id: rid,
+            },
+          };
+        });
       }
       toggle(e) {
         return this.emit("toggle", ["background"], {
@@ -32939,7 +33016,9 @@
         return Is(this, null, function* () {
           var e;
           if (!this.token) {
-            const { data: t } = yield this.emit("getState", ["background"]);
+            const { data: t } = (yield this.emit("getState", ["background"])) || {
+              data: {},
+            };
             return (this.token = null == (e = t.user) ? void 0 : e.token), this.token;
           }
           return this.token;
@@ -33152,7 +33231,10 @@
               ? new Promise((e, t) => {
                   var n;
                   if (!(null == (n = chrome.runtime) ? void 0 : n.id))
-                    return void t(new Error("Extension context invalidated."));
+                    return e({
+                      message: "invalidated",
+                      data: {},
+                    });
                   const i = (t) => e(t.response);
                   this.event.once(r.uuid, i);
                   const a = (e) => {
@@ -33163,6 +33245,16 @@
                     e &&
                       "function" == typeof e.catch &&
                       e.catch((e) => {
+                        if (
+                          !chrome.runtime?.id ||
+                          (e && String(e.message || e).includes("Extension context invalidated"))
+                        ) {
+                          e({
+                            message: "invalidated",
+                            data: {},
+                          });
+                          return;
+                        }
                         var t;
                         const n = e instanceof Error ? e.message : String(e);
                         (!(null == (t = chrome.runtime) ? void 0 : t.id) ||
@@ -33171,6 +33263,11 @@
                           a(e);
                       });
                   } catch (e) {
+                    if (!chrome.runtime?.id)
+                      return e({
+                        message: "invalidated",
+                        data: {},
+                      });
                     a(e);
                   }
                 })
@@ -33253,7 +33350,9 @@
       }
       getStateChunks(e) {
         return Ks(this, null, function* () {
-          const { data: t } = yield this.emit("getStateChunks", ["background"], Ws({}, e));
+          const { data: t } = (yield this.emit("getStateChunks", ["background"], Ws({}, e))) || {
+            data: {},
+          };
           return t;
         });
       }
@@ -33266,7 +33365,9 @@
               }),
               Promise.resolve(this.state)
             );
-          const { message: t, data: n } = yield this.emit("getState", ["background"]);
+          const { message: t, data: n } = (yield this.emit("getState", ["background"])) || {
+            data: {},
+          };
           return (
             Ht("[SYS.ec] getState", {
               message: t,
@@ -33278,7 +33379,25 @@
         });
       }
       getRuntime() {
-        return this.emit("runtime", ["background"]);
+        return Is(this, null, function* () {
+          try {
+            const res = yield this.emit("runtime", ["background"]);
+            if (res && res.data && res.data.version) return res;
+          } catch (_) {}
+          const ver =
+            (typeof chrome !== "undefined" && chrome.runtime?.getManifest?.()?.version) || "8.3.0";
+          const sc =
+            (typeof chrome !== "undefined" && chrome.runtime?.getURL?.("").slice(0, -1)) || "";
+          const rid = (typeof chrome !== "undefined" && chrome.runtime?.id) || "";
+          return {
+            message: "ok",
+            data: {
+              version: ver,
+              scheme: sc,
+              id: rid,
+            },
+          };
+        });
       }
       handle(e, t) {
         return Ks(this, null, function* () {
@@ -33306,7 +33425,9 @@
         return Ks(this, null, function* () {
           var e;
           if (!this.token) {
-            const { data: t } = yield this.emit("getState", ["background"]);
+            const { data: t } = (yield this.emit("getState", ["background"])) || {
+              data: {},
+            };
             return (this.token = null == (e = t.user) ? void 0 : e.token), this.token;
           }
           return this.token;
@@ -42874,7 +42995,7 @@
           try {
             const i = yield vn();
             let a = null;
-            for (let r = 0; r < 50 && !a; r++) {
+            for (let r = 0; r < 10 && !a; r++) {
               const o =
                 (null == (n = i.getOption) ? void 0 : n.call(i, "captions", "tracklist")) || [];
               if (((a = this.findNativeTrack(o, e)), a)) break;
@@ -43037,7 +43158,7 @@
           let r = !1;
           e.playerTrack && (r = !(yield this.drivePlayerTrack(e.playerTrack, n)));
           const i = yield this.acquireJSON3(n, n.searchParams.get("tlang") ? 5e3 : 8e3, {
-              allowSelfFetch: (null == t ? void 0 : t.allowSelfFetch) || r,
+              allowSelfFetch: /* LexiHalo: try the signed YouTube caption URL before waiting for interception. */ true,
               nudge: e.playerTrack ? () => this.nudgePlayerTrack(e.playerTrack) : void 0,
             }),
             a = i.events,
@@ -46021,9 +46142,15 @@
         const n = t.toLowerCase();
         return n.startsWith("zh") ? "zh" : n.split("-")[0];
       },
-      xf = (e, t) => {
-        const n = wf(e);
-        return !!n && n === wf(t);
+      xf = /* LexiHalo: distinguish Simplified and Traditional Chinese subtitles. */ (
+        left,
+        right,
+      ) => {
+        const leftFamily = wf(left),
+          rightFamily = wf(right);
+        if (!leftFamily || leftFamily !== rightFamily) return false;
+        if (leftFamily !== "zh") return true;
+        return Pn(left) === Pn(right);
       },
       kf = (e) =>
         (e || "")
@@ -47409,8 +47536,9 @@
         this.setSameLanguage(!!this.to && xf(this.sourceLang(), this.to));
       }
       evalLookupAllowed() {
-        const e = this.sourceLang();
-        this.setLookupAllowed(!e || !wf(this.learningLang) || xf(e, this.learningLang));
+        const source = this.sourceLang();
+        const learningFamily = wf(this.learningLang);
+        this.setLookupAllowed(!source || !learningFamily || wf(source) === learningFamily);
       }
       setLookupAllowed(e) {
         this.lookupAllowed !== e &&
@@ -55556,12 +55684,21 @@
                 n = y.translation;
               K(e), V(!0), $(void 0);
               try {
-                const { translatorService: r } = yield extensionClient.getStateChunks({
-                    only: ["translatorService"],
-                  }),
-                  i = r.engines.find(
-                    (e) => "user" === e.type || String(e._id || "").startsWith("byok-"),
-                  );
+                const { translatorService: r } = yield qs.getStateChunks({
+                  only: ["translatorService"],
+                });
+                const isAiEngine = (e) =>
+                  Boolean(e) &&
+                  ("user" === e.type ||
+                    String(e._id || "").startsWith("byok-") ||
+                    "built-in" !== e.type);
+                const preferredEngine =
+                  [r?.sentence, r?.subtitle, r?.fulltext].find(
+                    (e) => isAiEngine(e) && r.engines?.some((x) => x._id === e._id),
+                  ) || r.engines?.find(isAiEngine);
+                const i =
+                  preferredEngine &&
+                  (r.engines?.find((e) => e._id === preferredEngine._id) || preferredEngine);
                 if (!i) throw new Error("请先在 BYOK 设置中配置 AI 模型");
                 const a = `You are a professional bilingual lexicographer. Analyze one word from ${t} and explain it in ${n}. Return only valid JSON without Markdown or extra text.`,
                   o =
@@ -56466,7 +56603,67 @@
                         }),
                         (0, e.jsx)("div", {
                           className: "item-dict-wrapper",
-                          children: f.schemes.map((t, n) =>
+                          children: (f.schemes && f.schemes.length > 0
+                            ? f.schemes
+                            : [
+                                {
+                                  name: "Oxford",
+                                  scheme:
+                                    "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+                                  from: ["*"],
+                                  to: ["*"],
+                                  codes: {
+                                    en: "english",
+                                  },
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                                {
+                                  name: "Collins",
+                                  scheme:
+                                    "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+                                  from: ["*"],
+                                  to: ["*"],
+                                  codes: {
+                                    en: "english",
+                                  },
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                                {
+                                  name: "Longman",
+                                  scheme: "https://www.ldoceonline.com/dictionary/$TEXT",
+                                  from: ["*"],
+                                  to: ["*"],
+                                  codes: {
+                                    en: "english",
+                                  },
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                                {
+                                  name: "Youdao",
+                                  scheme: "https://dict.youdao.com/w/$TEXT",
+                                  from: ["*"],
+                                  to: ["*"],
+                                  codes: {},
+                                  options: {
+                                    width: 450,
+                                    height: 750,
+                                    type: "popup",
+                                  },
+                                },
+                              ]
+                          ).map((t, n) =>
                             (0, e.jsx)(
                               "div",
                               {
@@ -66277,7 +66474,6 @@
             setTranslatorServiceAction: setTranslatorServiceAction,
             setVideoAction: setVideoAction,
             shallowEqual: Pl,
-            ue: ue,
             useAppDispatch: kl,
             useAppSelector: Al,
             useLocale: pC,
@@ -67467,7 +67663,11 @@
           [g, f] = (0, React.useState)(props.container.clientWidth / 60),
           [v, y] = (0, React.useState)(!1),
           b = (0, React.useRef)(null),
-          w = (0, React.useRef)(null);
+          w = (0, React.useRef)(null),
+          sourceLanguage = s.target || c.language.subtitle,
+          translationLanguage = s.native || c.language.translation,
+          languagePair = `${sourceLanguage || "und"}:${translationLanguage || "und"}`,
+          previousLanguagePair = (0, React.useRef)(languagePair);
         (0, React.useEffect)(
           () => (
             vA(),
@@ -67481,6 +67681,15 @@
           ),
           [],
         );
+        (0, React.useEffect)(() => {
+          const platformClass = `xtc-${captionProvider.platform}`;
+          document.documentElement.classList.add(platformClass);
+          captionProvider.suppressNativeCaptions?.();
+          return () => {
+            document.documentElement.classList.remove(platformClass);
+            captionProvider.restore();
+          };
+        }, []);
         const x = (0, React.useRef)(null),
           k = (0, React.useRef)(null);
         (0, React.useEffect)(() => {
@@ -67989,7 +68198,7 @@
           },
           Oe = (e = !0, t = !1) =>
             FA(null, null, function* () {
-              if (!c.language.subtitle && !s.target) return;
+              if (!sourceLanguage) return;
               if (
                 (t || (Ee.current = 0),
                 window.clearTimeout(Ne.current),
@@ -68030,15 +68239,16 @@
                   ));
                 }
               }
-              "und" === c.language.subtitle && (e = !1),
+              "und" === sourceLanguage && (e = !1),
                 e && y(!0),
                 (captionProvider.engine = l),
-                (captionProvider.to = s.native || c.language.translation);
+                (captionProvider.to = translationLanguage);
               const n = captionProvider.getPreferLanguage();
-              captionProvider.from =
-                (n !== captionProvider.to ? n : void 0) || s.target || c.language.subtitle;
+              captionProvider.from = (n !== captionProvider.to ? n : void 0) || sourceLanguage;
               try {
-                if (!(yield captionProvider.load()) && "youtube" === captionProvider.platform)
+                const loadedCaption = yield captionProvider.load();
+                captionProvider.suppressNativeCaptions?.();
+                if (!loadedCaption && "youtube" === captionProvider.platform)
                   throw new Error("youtube caption load failed (null track)");
                 e &&
                   captionProvider.hasExternalCorpus &&
@@ -68073,6 +68283,7 @@
                     to: captionProvider.to,
                   });
               } catch (t) {
+                captionProvider.suppressNativeCaptions?.();
                 if (Ie(e)) return;
                 return (
                   y(!1),
@@ -68084,6 +68295,9 @@
               }
             });
         (0, React.useEffect)(() => {
+          const languageChanged = previousLanguagePair.current !== languagePair;
+          previousLanguagePair.current = languagePair;
+          if (languageChanged) captionProvider.resetForLanguageChange?.("language-change");
           const e = !["deeplearning"].includes(captionProvider.platform);
           Oe(e);
           const t = (e) => {
@@ -68098,14 +68312,12 @@
             () => {
               window.clearTimeout(Ne.current),
                 window.clearTimeout(Le.current),
-                document.documentElement.classList.remove(`xtc-${captionProvider.platform}`),
-                captionProvider.restore(),
                 window.removeEventListener("edvideo:dispatch", t),
                 captionProvider.event.off("changed", Ce),
                 captionProvider.event.off("caption:reload", Oe);
             }
           );
-        }, [s.target, s.native]);
+        }, [sourceLanguage, translationLanguage]);
         const { showAd: qe } = OA(captionProvider.platform),
           aiLineInFlight = Boolean(d && captionProvider.translatingIdx.includes(d.idx)),
           aiWaitingText = String(c.language.interface || "").startsWith("zh")
@@ -68638,7 +68850,6 @@
       const setTranslatorServiceAction = dependencies.setTranslatorServiceAction;
       const setVideoAction = dependencies.setVideoAction;
       const shallowEqual = dependencies.shallowEqual;
-      const ue = dependencies.ue;
       const useAppDispatch = dependencies.useAppDispatch;
       const useAppSelector = dependencies.useAppSelector;
       const useLocale = dependencies.useLocale;
@@ -69126,7 +69337,12 @@
                     learning_entry: y,
                   });
               },
-              children: (0, jsxRuntime.jsx)(ue, {}),
+              children: (0, jsxRuntime.jsx)("img", {
+                className: "icon-trancy-brand lexihalo-brand-icon",
+                src: `${props.runtime.scheme}/assets/icons/ic48.png`,
+                alt: "LexiHalo",
+                draggable: !1,
+              }),
             }),
             (0, jsxRuntime.jsx)("div", {
               className: xb()("trancy-panel-menu", {
@@ -69502,270 +69718,283 @@
                                 }),
                               ],
                             }),
-                          (0, jsxRuntime.jsxs)("div", {
-                            className: "trancy-menuitem",
-                            onClick: () => {
-                              const lines = captionProvider.lines || [];
-                              if (!lines.length) {
-                                return void $w.info("当前视频暂无可用字幕");
-                              }
-                              const isAiEngineActive = Boolean(
-                                captionProvider.engine?.model &&
-                                  (String(captionProvider.engine._id || "").startsWith("byok-") ||
-                                    [
-                                      "OpenAI",
-                                      "OpenRouter",
-                                      "DeepSeek",
-                                      "Google",
-                                      "Anthropic",
-                                      "Custom",
-                                      "AI",
-                                    ].includes(
-                                      captionProvider.engine.providerId ||
-                                        captionProvider.engine.provider,
-                                    )),
-                              );
-                              const isLineAiDone = (l) =>
-                                Boolean(
-                                  l &&
-                                    l.AITranslation &&
-                                    typeof l.AITranslation === "string" &&
-                                    l.AITranslation.trim().length > 0 &&
-                                    !l.AITranslation.includes("AI 翻译失败") &&
-                                    !l.AITranslation.includes("superseded"),
-                                );
-                              const isLineDone = isAiEngineActive
-                                ? isLineAiDone
-                                : (l) =>
-                                    Boolean(
-                                      l &&
-                                        (l.translation || l.AITranslation) &&
-                                        !String(l.translation || l.AITranslation).includes(
-                                          "AI 翻译失败",
-                                        ),
-                                    );
-                              const triggerDownloadSrt = (content, filename) => {
-                                const blob = new Blob(["\ufeff" + content], {
-                                  type: "application/octet-stream",
-                                });
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.style.display = "none";
-                                a.href = url;
-                                a.setAttribute("download", filename);
-                                a.download = filename;
-                                document.body.appendChild(a);
-                                a.click();
-                                setTimeout(() => {
-                                  try {
-                                    document.body.removeChild(a);
-                                    window.URL.revokeObjectURL(url);
-                                  } catch {}
-                                }, 60000);
-                              };
-                              const getCleanSrtFilename = (title, suffix) => {
-                                const safe = String(title || "subtitle")
-                                  .replace(/[\/\\:*?"<>|]/g, "_")
-                                  .replace(/[\r\n\t]/g, "")
-                                  .replace(/\s+/g, " ")
-                                  .trim()
-                                  .slice(0, 100);
-                                return `${safe || "video"}_${suffix}.srt`;
-                              };
-                              const downloadBilingualFile = (srcLines) => {
-                                const list = srcLines || captionProvider.lines || [];
-                                const content = list
-                                  .map((item, idx) => {
-                                    const trans = (
-                                      item.AITranslation ||
-                                      item.translation ||
-                                      ""
-                                    ).trim();
-                                    const orig = (item.text || item.originalText || "").trim();
-                                    const body =
-                                      trans && trans !== orig
-                                        ? `${trans}\r\n${orig}`
-                                        : orig || trans;
-                                    return [
-                                      idx + 1,
-                                      `${W(item.start)} --\x3e ${W(item.end)}`,
-                                      body || "",
-                                    ].join("\r\n");
-                                  })
-                                  .join("\r\n\r\n");
-                                triggerDownloadSrt(
-                                  content,
-                                  getCleanSrtFilename(platformContext.title, "双语字幕"),
-                                );
-                              };
-                              const untranslated = lines.filter((l) => !isLineDone(l));
-                              if (untranslated.length === 0) {
-                                downloadBilingualFile(lines);
-                                $w.success("完整双语字幕已成功下载！");
-                                return;
-                              }
-                              if (captionProvider._isExportTranslating) {
-                                return void $w.info(
-                                  `字幕正在全速处理中（当前进度：${lines.length - untranslated.length}/${lines.length}），全部处理完毕后将自动下载！`,
-                                  4e3,
-                                );
-                              }
-                              $w.info(
-                                `检测到尚有 ${untranslated.length} 条字幕未经AI处理，正在全速为您处理，处理完将自动下载！`,
-                                5e3,
-                              );
-                              captionProvider._isExportTranslating = true;
-                              const to =
-                                captionProvider.to || s.native || l.language.translation || "zh-CN";
-                              const from =
-                                captionProvider.from || s.target || l.language.subtitle || "auto";
-                              const engine = captionProvider.engine;
-                              ij(null, null, function* () {
-                                try {
-                                  const batchSize = 6;
-                                  while (
-                                    !captionProvider.isDestroyed &&
-                                    captionProvider._isExportTranslating
-                                  ) {
-                                    const curLines = captionProvider.lines || [];
-                                    const remain = curLines.filter((item) => !isLineDone(item));
-                                    if (!remain.length) break;
-                                    const doneCount = curLines.length - remain.length;
-                                    const pct = Math.round((doneCount / curLines.length) * 100);
-                                    setBatchProgress({
-                                      total: curLines.length,
-                                      done: doneCount,
-                                      pct,
-                                      running: true,
-                                      isAllDone: false,
-                                    });
-                                    const currentBatch = remain.slice(0, batchSize);
-                                    const texts = currentBatch.map(
-                                      (item) => item.originalText || item.text,
-                                    );
-                                    try {
-                                      const results = yield extensionClient.translateWithEngine({
-                                        texts,
-                                        from,
-                                        to,
-                                        engine,
-                                        cacheScope: "subtitle",
-                                        useCache: true,
-                                        requestGroup: captionProvider.id,
-                                        requestGeneration:
-                                          captionProvider.translationGeneration || 0,
-                                      });
-                                      if (Array.isArray(results) && results.length) {
-                                        const cache = captionProvider.captionCache.get(
-                                          captionProvider.id,
-                                        );
-                                        if (cache) {
-                                          const updateList = (arr) =>
-                                            Array.isArray(arr)
-                                              ? arr.map((line) => {
-                                                  const bIdx = currentBatch.findIndex(
-                                                    (b) => b.idx === line.idx,
-                                                  );
-                                                  if (
-                                                    bIdx >= 0 &&
-                                                    results[bIdx]?.message === "ok"
-                                                  ) {
-                                                    const res = results[bIdx];
-                                                    return {
-                                                      ...line,
-                                                      text: res.repairedText || line.text,
-                                                      AITranslation: res.translation,
-                                                      translation: res.translation,
-                                                      originalText: line.originalText || line.text,
-                                                      message: undefined,
-                                                    };
-                                                  }
-                                                  return line;
-                                                })
-                                              : arr;
-                                          captionProvider.captionCache.set(captionProvider.id, {
-                                            ...cache,
-                                            lines: updateList(cache.lines),
-                                            builtinLines: updateList(cache.builtinLines),
-                                            whisperLines: updateList(cache.whisperLines),
-                                          });
-                                          captionProvider.event.emit("changed", {
-                                            current: captionProvider.current,
-                                            forceUpdate: true,
-                                          });
-                                        }
-                                      }
-                                    } catch (err) {
-                                      console.warn("[LexiHalo] Batch export translate error:", err);
-                                    }
-                                    yield new Promise((r) => setTimeout(r, 350));
-                                  }
-                                  const finalLines = captionProvider.lines || [];
-                                  const finalRemain = finalLines.filter(
-                                    (item) => !isLineDone(item),
-                                  );
-                                  const allDone = finalRemain.length === 0;
-                                  setBatchProgress({
-                                    total: finalLines.length,
-                                    done: finalLines.length - finalRemain.length,
-                                    pct: allDone
-                                      ? 100
-                                      : Math.round(
-                                          ((finalLines.length - finalRemain.length) /
-                                            finalLines.length) *
-                                            100,
-                                        ),
-                                    running: false,
-                                    isAllDone: allDone,
-                                  });
-                                  if (allDone) {
-                                    downloadBilingualFile(finalLines);
-                                    $w.success(
-                                      "全视频字幕已全部AI处理完成，完整双语字幕已成功下载！",
-                                      4e3,
-                                    );
-                                  } else {
-                                    downloadBilingualFile(finalLines);
-                                    $w.error(
-                                      "部分字幕翻译遇到网络或配额限制，已将完成部分下载",
-                                      4e3,
-                                    );
-                                  }
-                                } finally {
-                                  captionProvider._isExportTranslating = false;
+                          false &&
+                            (0, jsxRuntime.jsxs)("div", {
+                              className: "trancy-menuitem",
+                              onClick: () => {
+                                const lines = captionProvider.lines || [];
+                                if (!lines.length) {
+                                  return void $w.info("当前视频暂无可用字幕");
                                 }
-                              });
-                            },
-                            children: [
-                              (0, jsxRuntime.jsx)("div", {
-                                className: "trancy-menuitem-icon",
-                                children: (0, jsxRuntime.jsx)(Le, {}),
-                              }),
-                              (0, jsxRuntime.jsx)("div", {
-                                className: "trancy-menuitem-label",
-                                children: "下载完整双语字幕 (.srt)",
-                              }),
-                              (0, jsxRuntime.jsx)("div", {
-                                className: "trancy-menuitem-action",
-                                children: (0, jsxRuntime.jsx)("span", {
-                                  style: {
-                                    fontSize: "12px",
-                                    fontWeight: 500,
-                                    color: batchProgress.isAllDone
-                                      ? "#10b981"
-                                      : batchProgress.running
-                                        ? "#f59e0b"
-                                        : "#9ca3af",
-                                  },
-                                  children: batchProgress.isAllDone
-                                    ? "已就绪 (点击下载)"
-                                    : batchProgress.running
-                                      ? `处理中 ${batchProgress.pct}%`
-                                      : `${batchProgress.done}/${batchProgress.total} (点击处理)`,
+                                const isAiEngineActive = Boolean(
+                                  captionProvider.engine?.model &&
+                                    (String(captionProvider.engine._id || "").startsWith("byok-") ||
+                                      [
+                                        "OpenAI",
+                                        "OpenRouter",
+                                        "DeepSeek",
+                                        "Google",
+                                        "Anthropic",
+                                        "Custom",
+                                        "AI",
+                                      ].includes(
+                                        captionProvider.engine.providerId ||
+                                          captionProvider.engine.provider,
+                                      )),
+                                );
+                                const isLineAiDone = (l) =>
+                                  Boolean(
+                                    l &&
+                                      l.AITranslation &&
+                                      typeof l.AITranslation === "string" &&
+                                      l.AITranslation.trim().length > 0 &&
+                                      !l.AITranslation.includes("AI 翻译失败") &&
+                                      !l.AITranslation.includes("superseded"),
+                                  );
+                                const isLineDone = isAiEngineActive
+                                  ? isLineAiDone
+                                  : (l) =>
+                                      Boolean(
+                                        l &&
+                                          (l.translation || l.AITranslation) &&
+                                          !String(l.translation || l.AITranslation).includes(
+                                            "AI 翻译失败",
+                                          ),
+                                      );
+                                const triggerDownloadSrt = (content, filename) => {
+                                  const blob = new Blob(["\ufeff" + content], {
+                                    type: "application/octet-stream",
+                                  });
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.style.display = "none";
+                                  a.href = url;
+                                  a.setAttribute("download", filename);
+                                  a.download = filename;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  setTimeout(() => {
+                                    try {
+                                      document.body.removeChild(a);
+                                      window.URL.revokeObjectURL(url);
+                                    } catch {}
+                                  }, 60000);
+                                };
+                                const getCleanSrtFilename = (title, suffix) => {
+                                  const safe = String(title || "subtitle")
+                                    .replace(/[\/\\:*?"<>|]/g, "_")
+                                    .replace(/[\r\n\t]/g, "")
+                                    .replace(/\s+/g, " ")
+                                    .trim()
+                                    .slice(0, 100);
+                                  return `${safe || "video"}_${suffix}.srt`;
+                                };
+                                const downloadBilingualFile = (srcLines) => {
+                                  const list = srcLines || captionProvider.lines || [];
+                                  const content = list
+                                    .map((item, idx) => {
+                                      const trans = (
+                                        item.AITranslation ||
+                                        item.translation ||
+                                        ""
+                                      ).trim();
+                                      const repairedSource = (
+                                        item.repairedText ||
+                                        item.text ||
+                                        item.originalText ||
+                                        ""
+                                      ).trim();
+                                      const body =
+                                        trans && trans !== repairedSource
+                                          ? `${trans}\r\n${repairedSource}`
+                                          : repairedSource || trans;
+                                      return [
+                                        idx + 1,
+                                        `${W(item.start)} --\x3e ${W(item.end)}`,
+                                        body || "",
+                                      ].join("\r\n");
+                                    })
+                                    .join("\r\n\r\n");
+                                  triggerDownloadSrt(
+                                    content,
+                                    getCleanSrtFilename(platformContext.title, "双语字幕"),
+                                  );
+                                };
+                                const untranslated = lines.filter((l) => !isLineDone(l));
+                                if (untranslated.length === 0) {
+                                  downloadBilingualFile(lines);
+                                  $w.success("完整双语字幕已成功下载！");
+                                  return;
+                                }
+                                if (captionProvider._isExportTranslating) {
+                                  return void $w.info(
+                                    `字幕正在全速处理中（当前进度：${lines.length - untranslated.length}/${lines.length}），全部处理完毕后将自动下载！`,
+                                    4e3,
+                                  );
+                                }
+                                $w.info(
+                                  `检测到尚有 ${untranslated.length} 条字幕未经AI处理，正在全速为您处理，处理完将自动下载！`,
+                                  5e3,
+                                );
+                                captionProvider._isExportTranslating = true;
+                                const to =
+                                  captionProvider.to ||
+                                  s.native ||
+                                  l.language.translation ||
+                                  "zh-CN";
+                                const from =
+                                  captionProvider.from || s.target || l.language.subtitle || "auto";
+                                const engine = captionProvider.engine;
+                                ij(null, null, function* () {
+                                  try {
+                                    const batchSize = 6;
+                                    while (
+                                      !captionProvider.isDestroyed &&
+                                      captionProvider._isExportTranslating
+                                    ) {
+                                      const curLines = captionProvider.lines || [];
+                                      const remain = curLines.filter((item) => !isLineDone(item));
+                                      if (!remain.length) break;
+                                      const doneCount = curLines.length - remain.length;
+                                      const pct = Math.round((doneCount / curLines.length) * 100);
+                                      setBatchProgress({
+                                        total: curLines.length,
+                                        done: doneCount,
+                                        pct,
+                                        running: true,
+                                        isAllDone: false,
+                                      });
+                                      const currentBatch = remain.slice(0, batchSize);
+                                      const texts = currentBatch.map(
+                                        (item) => item.originalText || item.text,
+                                      );
+                                      try {
+                                        const results = yield extensionClient.translateWithEngine({
+                                          texts,
+                                          from,
+                                          to,
+                                          engine,
+                                          cacheScope: "subtitle",
+                                          useCache: true,
+                                          requestGroup: captionProvider.id,
+                                          requestGeneration:
+                                            captionProvider.translationGeneration || 0,
+                                        });
+                                        if (Array.isArray(results) && results.length) {
+                                          const cache = captionProvider.captionCache.get(
+                                            captionProvider.id,
+                                          );
+                                          if (cache) {
+                                            const updateList = (arr) =>
+                                              Array.isArray(arr)
+                                                ? arr.map((line) => {
+                                                    const bIdx = currentBatch.findIndex(
+                                                      (b) => b.idx === line.idx,
+                                                    );
+                                                    if (
+                                                      bIdx >= 0 &&
+                                                      results[bIdx]?.message === "ok"
+                                                    ) {
+                                                      const res = results[bIdx];
+                                                      return {
+                                                        ...line,
+                                                        text: res.repairedText || line.text,
+                                                        AITranslation: res.translation,
+                                                        translation: res.translation,
+                                                        originalText:
+                                                          line.originalText || line.text,
+                                                        message: undefined,
+                                                      };
+                                                    }
+                                                    return line;
+                                                  })
+                                                : arr;
+                                            captionProvider.captionCache.set(captionProvider.id, {
+                                              ...cache,
+                                              lines: updateList(cache.lines),
+                                              builtinLines: updateList(cache.builtinLines),
+                                              whisperLines: updateList(cache.whisperLines),
+                                            });
+                                            captionProvider.event.emit("changed", {
+                                              current: captionProvider.current,
+                                              forceUpdate: true,
+                                            });
+                                          }
+                                        }
+                                      } catch (err) {
+                                        console.warn(
+                                          "[LexiHalo] Batch export translate error:",
+                                          err,
+                                        );
+                                      }
+                                      yield new Promise((r) => setTimeout(r, 350));
+                                    }
+                                    const finalLines = captionProvider.lines || [];
+                                    const finalRemain = finalLines.filter(
+                                      (item) => !isLineDone(item),
+                                    );
+                                    const allDone = finalRemain.length === 0;
+                                    setBatchProgress({
+                                      total: finalLines.length,
+                                      done: finalLines.length - finalRemain.length,
+                                      pct: allDone
+                                        ? 100
+                                        : Math.round(
+                                            ((finalLines.length - finalRemain.length) /
+                                              finalLines.length) *
+                                              100,
+                                          ),
+                                      running: false,
+                                      isAllDone: allDone,
+                                    });
+                                    if (allDone) {
+                                      downloadBilingualFile(finalLines);
+                                      $w.success(
+                                        "全视频字幕已全部AI处理完成，完整双语字幕已成功下载！",
+                                        4e3,
+                                      );
+                                    } else {
+                                      downloadBilingualFile(finalLines);
+                                      $w.error(
+                                        "部分字幕翻译遇到网络或配额限制，已将完成部分下载",
+                                        4e3,
+                                      );
+                                    }
+                                  } finally {
+                                    captionProvider._isExportTranslating = false;
+                                  }
+                                });
+                              },
+                              children: [
+                                (0, jsxRuntime.jsx)("div", {
+                                  className: "trancy-menuitem-icon",
+                                  children: (0, jsxRuntime.jsx)(Le, {}),
                                 }),
-                              }),
-                            ],
-                          }),
+                                (0, jsxRuntime.jsx)("div", {
+                                  className: "trancy-menuitem-label",
+                                  children: "下载完整双语字幕 (.srt)",
+                                }),
+                                (0, jsxRuntime.jsx)("div", {
+                                  className: "trancy-menuitem-action",
+                                  children: (0, jsxRuntime.jsx)("span", {
+                                    style: {
+                                      fontSize: "12px",
+                                      fontWeight: 500,
+                                      color: batchProgress.isAllDone
+                                        ? "#10b981"
+                                        : batchProgress.running
+                                          ? "#f59e0b"
+                                          : "#9ca3af",
+                                    },
+                                    children: batchProgress.isAllDone
+                                      ? "已就绪 (点击下载)"
+                                      : batchProgress.running
+                                        ? `处理中 ${batchProgress.pct}%`
+                                        : `${batchProgress.done}/${batchProgress.total} (点击处理)`,
+                                  }),
+                                }),
+                              ],
+                            }),
                           (0, jsxRuntime.jsxs)("div", {
                             className: "trancy-menuitem",
                             onClick: () => {
@@ -70489,6 +70718,58 @@
   const provider = window.captionProvider;
   if (!provider) return;
 
+  let youtubeNativeCaptionWasEnabled = false;
+  let youtubeNativeCaptionSuppressionActive = false;
+  let youtubeNativeCaptionObserver = null;
+  const getYouTubeCaptionControls = () => {
+    if (provider.platform !== "youtube") return {};
+    const player = document.querySelector(".html5-video-player");
+    return {
+      player,
+      button: player?.querySelector(".ytp-subtitles-button"),
+    };
+  };
+  const setYouTubeNativeCaption = (enabled) => {
+    const { player, button } = getYouTubeCaptionControls();
+    if (!player || !button || typeof player.toggleSubtitles !== "function") return false;
+    const current = button.getAttribute("aria-pressed") === "true";
+    if (current !== enabled) player.toggleSubtitles(enabled);
+    return true;
+  };
+  provider.suppressNativeCaptions = () => {
+    if (provider.platform !== "youtube") return;
+    const { button } = getYouTubeCaptionControls();
+    if (!button) return;
+    if (!youtubeNativeCaptionSuppressionActive) {
+      youtubeNativeCaptionWasEnabled = button.getAttribute("aria-pressed") === "true";
+      youtubeNativeCaptionSuppressionActive = true;
+      youtubeNativeCaptionObserver?.disconnect();
+      youtubeNativeCaptionObserver = new MutationObserver(() => {
+        if (
+          youtubeNativeCaptionSuppressionActive &&
+          provider.strategy !== "none" &&
+          button.getAttribute("aria-pressed") === "true"
+        ) {
+          youtubeNativeCaptionWasEnabled = true;
+          setYouTubeNativeCaption(false);
+        }
+      });
+      youtubeNativeCaptionObserver.observe(button, {
+        attributes: true,
+        attributeFilter: ["aria-pressed"],
+      });
+    }
+    setYouTubeNativeCaption(false);
+  };
+  provider.restore = () => {
+    if (provider.platform !== "youtube") return;
+    youtubeNativeCaptionSuppressionActive = false;
+    youtubeNativeCaptionObserver?.disconnect();
+    youtubeNativeCaptionObserver = null;
+    if (youtubeNativeCaptionWasEnabled) setYouTubeNativeCaption(true);
+    youtubeNativeCaptionWasEnabled = false;
+  };
+
   const isAiEngine = (engine) =>
     Boolean(
       engine?.model &&
@@ -70514,6 +70795,7 @@
     maxConcurrent: 2,
     retryDelayMs: 2000,
     seekSettleMs: 0,
+    baselineFallbackForPreload: true,
   };
 
   const cancelGeneration = () => {
@@ -70678,7 +70960,15 @@
       provider.pretransFailedAt = 0; // Clear failure lockout immediately on seek!
       cancelGeneration();
     }
-    return originalDrivePretranslate();
+    const result = originalDrivePretranslate();
+    // Streaming/text-track platforms already run this fallback from the
+    // provider tick. Preload platforms (notably YouTube and Prime Video) were
+    // excluded, so AI captions had no immediate Google baseline while waiting
+    // for the higher-quality model result.
+    if (!provider.hasExternalCorpus && isAiEngine(provider.engine)) {
+      provider.backfillBaseline();
+    }
+    return result;
   };
 
   provider.backfillBaseline = () => {
@@ -70699,7 +70989,7 @@
         }))
       : lines;
 
-  const purge = (scope) => {
+  const purge = (scope, { reload = true } = {}) => {
     const cache = provider.captionCache?.cache;
     let restored = false;
     if (cache instanceof Map && cache.size) {
@@ -70716,10 +71006,15 @@
       provider.captionCache?.clear?.();
     }
     provider.domTransCache?.clear?.();
+    provider.domTransInflight?.clear?.();
     provider.domTokensCache?.clear?.();
+    provider.domTokensInflight?.clear?.();
     provider.translatingIdx = [];
     provider.lastPretransCurrent = -1;
     provider.seekFirstBatch = true;
+    provider.pretransFailedAt = 0;
+    provider.baselineFailedAt = 0;
+    provider.tokenizeFailedAt = 0;
     provider.translationGeneration += 1;
     provider.aiSeekSettledAt = 0;
     provider.aiInflightRequests = 0;
@@ -70732,10 +71027,16 @@
         forceUpdate: true,
         cacheScope: scope,
       });
-    } else {
+    } else if (reload) {
       provider.event?.emit?.("caption:reload");
     }
   };
+
+  // DualCaptionApp calls this after either the global settings or the in-player
+  // language selector changes. Invalidate language-bound translations before
+  // its own effect reloads the selected source track; emitting caption:reload
+  // here as well would start a duplicate, racing load.
+  provider.resetForLanguageChange = (scope = "language-change") => purge(scope, { reload: false });
 
   window.addEventListener("edvideo:caption.purgeAndReload", (event) => purge(event?.detail?.scope));
   window.addEventListener("message", (event) => {
@@ -70831,10 +71132,12 @@
       const num = index + 1;
       const time = `${formatTimestamp(line.start)} --> ${formatTimestamp(line.end)}`;
       const translation = (line.AITranslation || line.translation || "").trim();
-      const original = (line.originalText || line.text || "").trim();
-      let text = original;
-      if (translation && translation !== original) {
-        text = `${translation}\r\n${original}`;
+      // `text` is replaced with the AI-repaired source after translation;
+      // `originalText` intentionally keeps the raw caption for cache resets.
+      const repairedSource = (line.repairedText || line.text || line.originalText || "").trim();
+      let text = repairedSource;
+      if (translation && translation !== repairedSource) {
+        text = `${translation}\r\n${repairedSource}`;
       }
       return `${num}\r\n${time}\r\n${text}`;
     });

@@ -90,14 +90,23 @@ export function recoverWordLookupCard(dependencies) {
             const { translatorService: n } =
                 yield extensionClient.getStateChunks({
                   only: ["translatorService"],
-                }),
-              r = n.engines.find(
-                (e) =>
-                  "user" === e.type || String(e._id || "").startsWith("byok-"),
-              );
+                });
+            const isAiEngine = (e) =>
+              Boolean(e) &&
+              ("user" === e.type ||
+                String(e._id || "").startsWith("byok-") ||
+                "built-in" !== e.type);
+            const preferredEngine =
+              [n?.sentence, n?.subtitle, n?.fulltext].find(
+                (e) => isAiEngine(e) && n.engines?.some((x) => x._id === e._id),
+              ) ||
+              n.engines?.find(isAiEngine);
+            const r =
+              preferredEngine &&
+              (n.engines?.find((e) => e._id === preferredEngine._id) || preferredEngine);
             if (!r) throw new Error("请先配置 BYOK AI 模型");
-            const i = `You are a bilingual lexicographer. Explain the word in its exact sentence context. The source language is ${s.subtitle}; answer in ${s.translation}. Return only valid JSON without Markdown.`,
-              a = `Word: {{text}}\nSentence context: ${t || ""}\nReturn {"pos":"part of speech","translation":"the precise contextual meaning in ${s.translation}"}.`,
+            const i = `You are a bilingual lexicographer. Explain the word in its exact sentence context. The source language is ${s.subtitle}; answer in ${s.translation}. Return ONLY a JSON object: {"pos": "part of speech", "translation": "precise meaning in ${s.translation}"}. Do NOT output Markdown codeblocks, explanation, or any other text.`,
+              a = `Word: {{text}}\nSentence context: ${t || ""}\nReturn JSON format: {"pos":"part of speech","translation":"the precise contextual meaning in ${s.translation}"}`,
               o = yield extensionClient.translateWithEngine({
                 texts: [e],
                 from: s.subtitle,
@@ -114,18 +123,41 @@ export function recoverWordLookupCard(dependencies) {
               throw new Error(
                 (null == o[0] ? void 0 : o[0].message) || "AI 精准释义失败",
               );
-            let c = String(l)
-                .trim()
-                .replace(/^```(?:json)?\s*/i, "")
-                .replace(/\s*```$/i, ""),
-              u = c.indexOf("{"),
+            let c = String(l).trim();
+            const fenceMatch = c.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (fenceMatch) c = fenceMatch[1].trim();
+            let u = c.indexOf("{"),
               d = c.lastIndexOf("}");
-            u >= 0 && d > u && (c = c.slice(u, d + 1));
-            const _ = JSON.parse(c);
-            P({
-              pos: _ && _.pos ? String(_.pos) : "",
-              translation: _ && _.translation ? String(_.translation) : "",
-            });
+            let parsed = null;
+            if (u >= 0 && d > u) {
+              try {
+                parsed = JSON.parse(c.slice(u, d + 1));
+              } catch (_) {}
+            }
+            if (!parsed) {
+              try {
+                parsed = JSON.parse(c);
+              } catch (_) {}
+            }
+            if (parsed && typeof parsed === "object") {
+              P({
+                pos: parsed.pos ? String(parsed.pos) : "",
+                translation: parsed.translation ? String(parsed.translation) : "",
+              });
+            } else {
+              const posMatch = c.match(/(?:^|\n|\s)(n\.|v\.|adj\.|adv\.|prep\.|pron\.|conj\.|det\.|aux\.|int\.)\s*(.*)/i);
+              if (posMatch) {
+                P({
+                  pos: posMatch[1].trim(),
+                  translation: (posMatch[2] || "").trim() || c,
+                });
+              } else {
+                P({
+                  pos: "",
+                  translation: c,
+                });
+              }
+            }
           } catch (e) {
             P({
               pos: "AI",
@@ -359,7 +391,8 @@ export function recoverWordLookupCard(dependencies) {
                     ),
                     (0 !== E || N) &&
                       (0, jsxRuntime.jsxs)("div", {
-                        className: "rd-words-translation-item",
+                        className:
+                          "rd-words-translation-item rd-words-translation-item-ai",
                         children: [
                           (0, jsxRuntime.jsx)("span", {
                             className: classNames()("pos ai", {

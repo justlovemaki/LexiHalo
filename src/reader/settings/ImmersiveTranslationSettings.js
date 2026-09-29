@@ -163,64 +163,6 @@ export function recoverImmersiveTranslationSettings(dependencies) {
                 className: "tips",
                 children: o("rd_immersive_translate_tips"),
               }),
-              (0, jsxRuntime.jsxs)("div", {
-                id: "lexihalo-immersive-cache-host",
-                children: [
-                  (0, jsxRuntime.jsx)("div", {
-                    className: "slider-label lg-label",
-                    children: "缓存管理",
-                  }),
-                  (0, jsxRuntime.jsx)("div", {
-                    className: "item-slider-group",
-                    children: (0, jsxRuntime.jsxs)("div", {
-                      className: "item-slider",
-                      children: [
-                        (0, jsxRuntime.jsxs)("div", {
-                          className: "item-slider-content",
-                          children: [
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "item-left",
-                              children: (0, jsxRuntime.jsx)("span", {
-                                children: "沉浸式翻译缓存",
-                              }),
-                            }),
-                            (0, jsxRuntime.jsx)("div", {
-                              className: "item-right",
-                              children: (0, jsxRuntime.jsx)("div", {
-                                className: "right-link",
-                                "data-lexihalo-cache-scope": "immersive",
-                                onClick: (e) => {
-                                  e.stopPropagation(),
-                                    window.lexihaloClearScopedCache
-                                      ? window.lexihaloClearScopedCache(
-                                          "immersive",
-                                        )
-                                      : window.postMessage(
-                                          {
-                                            eventName:
-                                              "lexihalo:cache-clear-request",
-                                            scope: "immersive",
-                                          },
-                                          "*",
-                                        );
-                                },
-                                children: (0, jsxRuntime.jsx)("span", {
-                                  children: "清理",
-                                }),
-                              }),
-                            }),
-                          ],
-                        }),
-                        (0, jsxRuntime.jsx)("div", {
-                          className: "item-slider-des",
-                          children:
-                            "仅清除网页沉浸式翻译缓存，刷新页面后重新翻译",
-                        }),
-                      ],
-                    }),
-                  }),
-                ],
-              }),
               (0, jsxRuntime.jsx)("div", {
                 className: "slider-label lg-label",
                 children: o("rd_immersive_translate_label_start"),

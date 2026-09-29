@@ -66,7 +66,11 @@ export function recoverDualCaptionApp(dependencies) {
       [g, f] = (0, React.useState)(props.container.clientWidth / 60),
       [v, y] = (0, React.useState)(!1),
       b = (0, React.useRef)(null),
-      w = (0, React.useRef)(null);
+      w = (0, React.useRef)(null),
+      sourceLanguage = s.target || c.language.subtitle,
+      translationLanguage = s.native || c.language.translation,
+      languagePair = `${sourceLanguage || "und"}:${translationLanguage || "und"}`,
+      previousLanguagePair = (0, React.useRef)(languagePair);
     (0, React.useEffect)(
       () => (
         vA(),
@@ -80,6 +84,15 @@ export function recoverDualCaptionApp(dependencies) {
       ),
       [],
     );
+    (0, React.useEffect)(() => {
+      const platformClass = `xtc-${captionProvider.platform}`;
+      document.documentElement.classList.add(platformClass);
+      captionProvider.suppressNativeCaptions?.();
+      return () => {
+        document.documentElement.classList.remove(platformClass);
+        captionProvider.restore();
+      };
+    }, []);
     const x = (0, React.useRef)(null),
       k = (0, React.useRef)(null);
     (0, React.useEffect)(() => {
@@ -617,7 +630,7 @@ export function recoverDualCaptionApp(dependencies) {
       },
       Oe = (e = !0, t = !1) =>
         FA(null, null, function* () {
-          if (!c.language.subtitle && !s.target) return;
+          if (!sourceLanguage) return;
           if (
             (t || (Ee.current = 0),
             window.clearTimeout(Ne.current),
@@ -660,20 +673,17 @@ export function recoverDualCaptionApp(dependencies) {
               ));
             }
           }
-          "und" === c.language.subtitle && (e = !1),
+          "und" === sourceLanguage && (e = !1),
             e && y(!0),
             (captionProvider.engine = l),
-            (captionProvider.to = s.native || c.language.translation);
+            (captionProvider.to = translationLanguage);
           const n = captionProvider.getPreferLanguage();
           captionProvider.from =
-            (n !== captionProvider.to ? n : void 0) ||
-            s.target ||
-            c.language.subtitle;
+            (n !== captionProvider.to ? n : void 0) || sourceLanguage;
           try {
-            if (
-              !(yield captionProvider.load()) &&
-              "youtube" === captionProvider.platform
-            )
+            const loadedCaption = yield captionProvider.load();
+            captionProvider.suppressNativeCaptions?.();
+            if (!loadedCaption && "youtube" === captionProvider.platform)
               throw new Error("youtube caption load failed (null track)");
             e &&
               captionProvider.hasExternalCorpus &&
@@ -708,6 +718,7 @@ export function recoverDualCaptionApp(dependencies) {
                 to: captionProvider.to,
               });
           } catch (t) {
+            captionProvider.suppressNativeCaptions?.();
             if (Ie(e)) return;
             return (
               y(!1),
@@ -719,6 +730,10 @@ export function recoverDualCaptionApp(dependencies) {
           }
         });
     (0, React.useEffect)(() => {
+      const languageChanged = previousLanguagePair.current !== languagePair;
+      previousLanguagePair.current = languagePair;
+      if (languageChanged)
+        captionProvider.resetForLanguageChange?.("language-change");
       const e = !["deeplearning"].includes(captionProvider.platform);
       Oe(e);
       const t = (e) => {
@@ -733,16 +748,12 @@ export function recoverDualCaptionApp(dependencies) {
         () => {
           window.clearTimeout(Ne.current),
             window.clearTimeout(Le.current),
-            document.documentElement.classList.remove(
-              `xtc-${captionProvider.platform}`,
-            ),
-            captionProvider.restore(),
             window.removeEventListener("edvideo:dispatch", t),
             captionProvider.event.off("changed", Ce),
             captionProvider.event.off("caption:reload", Oe);
         }
       );
-    }, [s.target, s.native]);
+    }, [sourceLanguage, translationLanguage]);
     const { showAd: qe } = OA(captionProvider.platform),
       aiLineInFlight = Boolean(
         d && captionProvider.translatingIdx.includes(d.idx),

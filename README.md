@@ -17,10 +17,15 @@ LexiHalo 是一个以本地独立运行和 BYOK 为核心的 AI 翻译、网页�
 ## 安装
 
 1. 下载或克隆本仓库。
-2. 打开 Chromium 浏览器的扩展管理页面。
-3. 开启“开发者模式”。
-4. 选择“加载已解压的扩展程序”，并选择仓库根目录。
-5. 建议停用其他同源版本，避免内容脚本冲突。
+2. 运行构建命令：
+   ```bash
+   npm install
+   npm run build
+   ```
+3. 打开 Chromium 浏览器的扩展管理页面（如 `chrome://extensions/`）。
+4. 开启“开发者模式”。
+5. 选择“加载已解压的扩展程序”，并选择生成的 **`dist`** 目录。
+6. 建议停用其他同源版本，避免内容脚本冲突。
 
 ## 配置 BYOK
 
@@ -48,10 +53,11 @@ LexiHalo 是一个以本地独立运行和 BYOK 为核心的 AI 翻译、网页�
 
 ## 项目结构
 
+- `dist/`：构建生成的干净扩展产物目录（包含 `manifest.json`、页面 HTML、`_locales/` 和 `assets/`），Chrome 扩展直接加载此目录即可。
 - `src/`：主要可维护源码和样式；Reader 页面/卡片/设置位于 `src/reader/`，Video UI 位于 `src/video/ui/`，Popup UI 位于 `src/popup/ui/`，HTML 模板位于 `src/pages/`，界面文案位于 `src/locales/`。
 - `config/`：构建基线及高置信度符号配置。
 - `vendor/legacy/`：从原扩展保留的稳定 Bundle 基线。
-- `assets/`：浏览器实际加载的构建结果；仓库根目录可直接作为未打包扩展加载。
+- `assets/`：静态资源和基础 Bundle。
 - `tools/`：恢复、构建、检查和浏览器回归脚本。
 - `docs/`：架构、改造与审计文档。
 - `artifacts/`、`recovered/`、`src-recovered/`：可再生报告和恢复分析结果，不纳入 Git。

@@ -132,7 +132,7 @@ const curated = {
   popup: new Set(["T", "k", "S", "w", "C"]),
 };
 
-function findPrimaryFunction(ast) {
+function findPrimaryFunction(ast, name = null) {
   const candidates = [];
   traverse(ast, {
     CallExpression(callPath) {
@@ -149,6 +149,10 @@ function findPrimaryFunction(ast) {
       }
     },
   });
+  if (name === "popup") {
+    candidates.sort((a, b) => b.size - a.size);
+    return candidates[0]?.path;
+  }
   candidates.sort((a, b) => b.statements - a.statements || b.size - a.size);
   return candidates[0]?.path;
 }
@@ -163,7 +167,7 @@ function applySemanticRenames(name, ast) {
   const indexPath = symbolIndexes[name];
   if (!indexPath) return [];
   const index = JSON.parse(fs.readFileSync(path.join(root, indexPath), "utf8"));
-  const appPath = findPrimaryFunction(ast);
+  const appPath = findPrimaryFunction(ast, name);
   if (!appPath) return [];
   const counts = new Map();
   for (const [original, suggested] of Object.entries(
@@ -234,9 +238,54 @@ function installBackgroundStructuredAiBridge(ast) {
     }
   }
 
+  traverse(ast, {
+    Class(classPath) {
+      const methods = classPath.node.body.body.map((m) => m.key?.name).filter(Boolean);
+      if (methods.includes("response") && methods.includes("emit")) {
+        classPath.traverse({
+          CallExpression(callPath) {
+            if (
+              callPath.node.callee?.property?.name === "addListener" &&
+              generate(callPath.node.callee.object).code.includes("browserApi.runtime.onMessage")
+            ) {
+              const listener = callPath.node.arguments[0];
+              if (listener && (t.isArrowFunctionExpression(listener) || t.isFunctionExpression(listener))) {
+                const body = listener.body;
+                if (t.isBlockStatement(body)) {
+                  // Prepend e.frameId = t.frameId; e.tabid = t.tab?.id;
+                  body.body.unshift(
+                    ...parseStatements(`
+                      if (t) {
+                        e.frameId = t.frameId;
+                        if (t.tab?.id) e.tabid = t.tab.id;
+                      }
+                    `),
+                  );
+                }
+              }
+            }
+          },
+        });
+      }
+    },
+  });
   let adapterSignals = 0;
   let responseRecoveries = 0;
   traverse(ast, {
+    ClassMethod(methodPath) {
+      if (methodPath.node.key?.name === "makeRequest") {
+        methodPath.traverse({
+          VariableDeclarator(declPath) {
+            if (
+              t.isIdentifier(declPath.node.id, { name: "v" }) &&
+              t.isNumericLiteral(declPath.node.init, { value: 3e4 })
+            ) {
+              declPath.node.init = parser.parseExpression("12e4");
+            }
+          },
+        });
+      }
+    },
     ClassDeclaration(classPath) {
       if (
         ![
@@ -282,6 +331,27 @@ function installBackgroundStructuredAiBridge(ast) {
             ),
           );
           adapterSignals += 1;
+        },
+        ConditionalExpression(condPath) {
+          // Find `P = null != (s = p.endpoint.timeoutMs) ? s : 3e4` or similar
+          // and allow engine.timeoutMs or engine.requestTimeoutMs or extend default timeout
+          const test = condPath.node.test;
+          if (
+            t.isBinaryExpression(test, { operator: "!=" }) &&
+            t.isNullLiteral(test.left) &&
+            t.isAssignmentExpression(test.right) &&
+            t.isMemberExpression(test.right.right) &&
+            test.right.right.property?.name === "timeoutMs"
+          ) {
+            const assign = test.right;
+            if (t.isNumericLiteral(condPath.node.alternate, { value: 3e4 })) {
+              condPath.replaceWith(
+                parser.parseExpression(`
+                  (null != (${generate(assign).code}) ? ${generate(assign.left).code} : (e.engine?.timeoutMs || 12e4))
+                `)
+              );
+            }
+          }
         },
         StringLiteral(literalPath) {
           if (literalPath.node.value !== "empty response text") return;
@@ -336,6 +406,34 @@ function installBackgroundStructuredAiBridge(ast) {
       `background: expected 3 response recovery patches, got ${responseRecoveries}`,
     );
   }
+
+  traverse(ast, {
+    CallExpression(callPath) {
+      if (
+        callPath.node.callee?.property?.name === "on" &&
+        callPath.node.arguments[0]?.value === "translateWithEngine"
+      ) {
+        callPath.traverse({
+          ObjectProperty(propPath) {
+            if (propPath.node.key?.name === "engine") {
+              const val = propPath.node.value;
+              if (
+                t.isCallExpression(val) &&
+                t.isIdentifier(val.arguments[1], { name: "l" }) &&
+                t.isCallExpression(val.arguments[0]) &&
+                t.isIdentifier(val.arguments[0].arguments[1], { name: "o" })
+              ) {
+                // Swap so stored engine `l` is base and caller engine `o` overrides:
+                // gu(gu({}, l), o)
+                val.arguments[0].arguments[1] = t.identifier("l");
+                val.arguments[1] = t.identifier("o");
+              }
+            }
+          },
+        });
+      }
+    },
+  });
 
   let fetchAbortPatched = false;
   traverse(ast, {
@@ -416,6 +514,70 @@ function installBackgroundStructuredAiBridge(ast) {
   );
 }
 
+function patchReaderBrandIcons(ast) {
+  const brandClasses = new Set([
+    "icon-trancy-brand",
+    "trancy-svg-brand",
+    "outline-trancy",
+  ]);
+  const replacements = new Map(
+    [...brandClasses].map((className) => [className, 0]),
+  );
+  const iconUrl = parser.parseExpression(`
+    globalThis.chrome?.runtime?.getURL?.("assets/icons/ic48.png") ||
+    globalThis.browser?.runtime?.getURL?.("assets/icons/ic48.png") ||
+    "assets/icons/ic48.png"
+  `);
+
+  traverse(ast, {
+    CallExpression(callPath) {
+      const [element, props] = callPath.node.arguments;
+      if (!t.isStringLiteral(element, { value: "svg" }) || !t.isObjectExpression(props))
+        return;
+      const classProperty = props.properties.find(
+        (property) =>
+          t.isObjectProperty(property) &&
+          !property.computed &&
+          t.isIdentifier(property.key, { name: "className" }) &&
+          t.isStringLiteral(property.value) &&
+          brandClasses.has(property.value.value),
+      );
+      if (!classProperty) return;
+
+      const originalClass = classProperty.value.value;
+      callPath.node.arguments = [
+        t.stringLiteral("img"),
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier("className"),
+            t.stringLiteral(`${originalClass} lexihalo-brand-icon`),
+          ),
+          t.objectProperty(t.identifier("src"), t.cloneNode(iconUrl, true)),
+          t.objectProperty(t.identifier("alt"), t.stringLiteral("LexiHalo")),
+          t.objectProperty(t.identifier("width"), t.stringLiteral("20")),
+          t.objectProperty(t.identifier("height"), t.stringLiteral("20")),
+          t.objectProperty(t.identifier("draggable"), t.booleanLiteral(false)),
+        ]),
+      ];
+      replacements.set(originalClass, replacements.get(originalClass) + 1);
+      callPath.skip();
+    },
+  });
+
+  const expected = {
+    "icon-trancy-brand": 1,
+    "trancy-svg-brand": 2,
+    "outline-trancy": 1,
+  };
+  for (const [className, count] of Object.entries(expected)) {
+    if (replacements.get(className) !== count) {
+      throw new Error(
+        `reader: expected ${count} ${className} brand icon replacement(s), got ${replacements.get(className)}`,
+      );
+    }
+  }
+}
+
 function installUiSourceFactories(
   ast,
   {
@@ -426,7 +588,7 @@ function installUiSourceFactories(
     globals = [],
   },
 ) {
-  const appPath = findPrimaryFunction(ast);
+  const appPath = findPrimaryFunction(ast, area);
   if (!appPath)
     throw new Error(`${area}: primary application scope not found`);
   const collectFiles = (directory) =>
@@ -576,6 +738,283 @@ function installUiSourceFactories(
   return installed;
 }
 
+function patchExtensionClientEmit(ast, area) {
+  let patched = 0;
+  traverse(ast, {
+    StringLiteral(path) {
+      if (path.node.value === "Extension context invalidated.") {
+        const method = path.findParent((p) => p.isClassMethod());
+        if (method && t.isIdentifier(method.node.key, { name: "emit" })) {
+          method.traverse({
+            IfStatement(ifPath) {
+              const test = ifPath.node.test;
+              // Check if test is !(chrome.runtime?.id)
+              if (
+                t.isUnaryExpression(test, { operator: "!" }) &&
+                ifPath.node.consequent
+              ) {
+                // Return safe empty object with data: {} so destructuring `const { data }` never throws
+                ifPath.get("consequent").replaceWith(
+                  t.returnStatement(
+                    t.callExpression(t.identifier("e"), [
+                      t.objectExpression([
+                        t.objectProperty(t.identifier("message"), t.stringLiteral("invalidated")),
+                        t.objectProperty(t.identifier("data"), t.objectExpression([])),
+                      ]),
+                    ]),
+                  ),
+                );
+                patched += 1;
+              }
+            },
+            CatchClause(catchPath) {
+              // When chrome.runtime.sendMessage catch or error occurs
+              const paramName = catchPath.node.param?.name;
+              if (paramName) {
+                catchPath.get("body").unshiftContainer(
+                  "body",
+                  parseStatements(`
+                    if (!chrome.runtime?.id) {
+                      e({ message: "invalidated", data: {} });
+                      return;
+                    }
+                  `),
+                );
+                patched += 1;
+              }
+            },
+            CallExpression(callPath) {
+              // Intercept the .catch on sendMessage
+              if (
+                t.isMemberExpression(callPath.node.callee) &&
+                t.isIdentifier(callPath.node.callee.property, { name: "catch" })
+              ) {
+                const catchFn = callPath.node.arguments[0];
+                if (catchFn && (t.isArrowFunctionExpression(catchFn) || t.isFunctionExpression(catchFn))) {
+                  const body = catchFn.body;
+                  if (t.isBlockStatement(body)) {
+                    body.body.unshift(
+                      ...parseStatements(`
+                        if (!chrome.runtime?.id || (e && String(e.message || e).includes("Extension context invalidated"))) {
+                          e({ message: "invalidated", data: {} });
+                          return;
+                        }
+                      `),
+                    );
+                    patched += 1;
+                  }
+                }
+              }
+            },
+          });
+        }
+      }
+    },
+    ClassMethod(path) {
+      if (path.node.key?.name === "getToken") {
+        path.traverse({
+          VariableDeclarator(varPath) {
+            if (
+              t.isObjectPattern(varPath.node.id) &&
+              varPath.node.id.properties.some((p) => p.key?.name === "data") &&
+              t.isYieldExpression(varPath.node.init)
+            ) {
+              varPath.node.init = t.logicalExpression(
+                "||",
+                varPath.node.init,
+                t.objectExpression([
+                  t.objectProperty(t.identifier("data"), t.objectExpression([])),
+                ]),
+              );
+            }
+          },
+        });
+      }
+      if (path.node.key?.name === "getStateChunks") {
+        path.traverse({
+          VariableDeclarator(varPath) {
+            if (
+              t.isObjectPattern(varPath.node.id) &&
+              varPath.node.id.properties.some((p) => p.key?.name === "data") &&
+              t.isYieldExpression(varPath.node.init)
+            ) {
+              // (yield this.emit(...)) || {}
+              varPath.node.init = t.logicalExpression(
+                "||",
+                varPath.node.init,
+                t.objectExpression([
+                  t.objectProperty(t.identifier("data"), t.objectExpression([])),
+                ]),
+              );
+            }
+          },
+        });
+      }
+      if (path.node.key?.name === "getState") {
+        path.traverse({
+          VariableDeclarator(varPath) {
+            if (
+              t.isObjectPattern(varPath.node.id) &&
+              varPath.node.id.properties.some((p) => p.key?.name === "data") &&
+              t.isYieldExpression(varPath.node.init)
+            ) {
+              // (yield this.emit(...)) || {}
+              varPath.node.init = t.logicalExpression(
+                "||",
+                varPath.node.init,
+                t.objectExpression([
+                  t.objectProperty(t.identifier("data"), t.objectExpression([])),
+                ]),
+              );
+            }
+          },
+        });
+      }
+      if (path.node.key?.name === "getRuntime") {
+        // Wrap getRuntime to fallback to local chrome.runtime when emit returns undefined or fails
+        const block = path.get("body");
+        if (block?.isBlockStatement()) {
+          const areaHelper = area === "video" ? "Is" : "To";
+          path.node.body = parser.parse(`
+            function dummy() {
+              return ${areaHelper}(this, null, function* () {
+                try {
+                  const res = yield this.emit("runtime", ["background"]);
+                  if (res && res.data && res.data.version) return res;
+                } catch (_) {}
+                const ver = (typeof chrome !== "undefined" && chrome.runtime?.getManifest?.()?.version) || "8.3.0";
+                const sc = (typeof chrome !== "undefined" && chrome.runtime?.getURL?.("").slice(0, -1)) || "";
+                const rid = (typeof chrome !== "undefined" && chrome.runtime?.id) || "";
+                return { message: "ok", data: { version: ver, scheme: sc, id: rid } };
+              });
+            }
+          `).program.body[0].body;
+        }
+      }
+    },
+  });
+  return patched;
+}
+
+function patchChineseSubtitleVariants(ast) {
+  let patched = 0;
+  let lookupPatched = 0;
+  traverse(ast, {
+    VariableDeclarator(declaratorPath) {
+      if (
+        !t.isIdentifier(declaratorPath.node.id, { name: "xf" }) ||
+        !t.isArrowFunctionExpression(declaratorPath.node.init)
+      )
+        return;
+      const left = t.identifier("left");
+      const right = t.identifier("right");
+      const leftFamily = t.identifier("leftFamily");
+      const rightFamily = t.identifier("rightFamily");
+      const replacement = t.arrowFunctionExpression(
+        [left, right],
+        t.blockStatement([
+          t.variableDeclaration("const", [
+            t.variableDeclarator(
+              leftFamily,
+              t.callExpression(t.identifier("wf"), [left]),
+            ),
+            t.variableDeclarator(
+              rightFamily,
+              t.callExpression(t.identifier("wf"), [right]),
+            ),
+          ]),
+          t.ifStatement(
+            t.logicalExpression(
+              "||",
+              t.unaryExpression("!", leftFamily),
+              t.binaryExpression("!==", leftFamily, rightFamily),
+            ),
+            t.returnStatement(t.booleanLiteral(false)),
+          ),
+          t.ifStatement(
+            t.binaryExpression("!==", leftFamily, t.stringLiteral("zh")),
+            t.returnStatement(t.booleanLiteral(true)),
+          ),
+          t.returnStatement(
+            t.binaryExpression(
+              "===",
+              t.callExpression(t.identifier("Pn"), [left]),
+              t.callExpression(t.identifier("Pn"), [right]),
+            ),
+          ),
+        ]),
+      );
+      t.addComment(
+        replacement,
+        "leading",
+        " LexiHalo: distinguish Simplified and Traditional Chinese subtitles. ",
+      );
+      declaratorPath.get("init").replaceWith(replacement);
+      patched += 1;
+    },
+    ClassMethod(methodPath) {
+      if (!t.isIdentifier(methodPath.node.key, { name: "evalLookupAllowed" }))
+        return;
+      methodPath.node.body = t.blockStatement(
+        parseStatements(`
+          const source = this.sourceLang();
+          const learningFamily = wf(this.learningLang);
+          this.setLookupAllowed(
+            !source || !learningFamily || wf(source) === learningFamily,
+          );
+        `),
+      );
+      lookupPatched += 1;
+    },
+  });
+  if (patched !== 1 || lookupPatched !== 1)
+    throw new Error(
+      `video: expected one Chinese subtitle comparison and one lookup-family guard, patched ${patched}/${lookupPatched}`,
+    );
+}
+
+function patchYouTubeCaptionStartup(ast) {
+  let selfFetchPatches = 0;
+  let trackWaitPatches = 0;
+  traverse(ast, {
+    ClassMethod(methodPath) {
+      if (t.isIdentifier(methodPath.node.key, { name: "downloadJSON3Caption" })) {
+        methodPath.traverse({
+          ObjectProperty(propertyPath) {
+            if (!t.isIdentifier(propertyPath.node.key, { name: "allowSelfFetch" }))
+              return;
+            const enabled = t.booleanLiteral(true);
+            t.addComment(
+              enabled,
+              "leading",
+              " LexiHalo: try the signed YouTube caption URL before waiting for interception. ",
+            );
+            propertyPath.get("value").replaceWith(enabled);
+            selfFetchPatches += 1;
+          },
+        });
+      }
+      if (t.isIdentifier(methodPath.node.key, { name: "drivePlayerTrack" })) {
+        methodPath.traverse({
+          BinaryExpression(binaryPath) {
+            if (
+              binaryPath.node.operator !== "<" ||
+              !t.isNumericLiteral(binaryPath.node.right, { value: 50 })
+            )
+              return;
+            binaryPath.node.right = t.numericLiteral(10);
+            trackWaitPatches += 1;
+          },
+        });
+      }
+    },
+  });
+  if (selfFetchPatches !== 1 || trackWaitPatches !== 1)
+    throw new Error(
+      `video: expected one YouTube self-fetch and track-wait patch, got ${selfFetchPatches}/${trackWaitPatches}`,
+    );
+}
+
 function patchVideoAiRequests(ast) {
   let requestMetadataPatches = 0;
   let originalTextPatches = 0;
@@ -711,6 +1150,96 @@ function patchVideoAiRequests(ast) {
     },
   });
   traverse(ast, {
+    TryStatement(path) {
+      const block = path.get("block");
+      const statements = block.node.body;
+      const findEngineStmt = statements.find((s) => {
+        const code = generate(s).code;
+        return code.includes('only: ["translatorService"]') && code.includes("byok-");
+      });
+      if (findEngineStmt) {
+        const index = statements.indexOf(findEngineStmt);
+        const engineFunction = parser.parse(`
+          function* dummy() {
+            const { translatorService: r } = yield qs.getStateChunks({
+              only: ["translatorService"],
+            });
+            const isAiEngine = (e) =>
+              Boolean(e) &&
+              ("user" === e.type ||
+                String(e._id || "").startsWith("byok-") ||
+                "built-in" !== e.type);
+            const preferredEngine =
+              [r?.sentence, r?.subtitle, r?.fulltext].find(
+                (e) => isAiEngine(e) && r.engines?.some((x) => x._id === e._id),
+              ) ||
+              r.engines?.find(isAiEngine);
+            const i =
+              preferredEngine &&
+              (r.engines?.find((e) => e._id === preferredEngine._id) || preferredEngine);
+          }
+        `, { sourceType: "module" });
+        const engineNodes = engineFunction.program.body[0].body.body;
+        block.node.body.splice(index, 1, ...engineNodes);
+      }
+      const parseStmt = statements.find((s) => {
+        const code = generate(s).code;
+        return code.includes("JSON.parse(c)") && code.includes("AI 返回格式无效");
+      });
+      if (parseStmt) {
+        // Replace parsing logic with resilient json parsing and fallback
+        const index = statements.indexOf(parseStmt);
+        const setStmt = statements[index + 1]; // F(p)
+        const setIdentifier =
+          t.isExpressionStatement(setStmt) &&
+          t.isCallExpression(setStmt.expression) &&
+          t.isIdentifier(setStmt.expression.callee)
+            ? setStmt.expression.callee.name
+            : "F";
+        const newNodes = parseStatements(`
+          let p = null;
+          if (u >= 0 && d > u) {
+            try {
+              p = JSON.parse(c.slice(u, d + 1));
+            } catch (_) {}
+          }
+          if (!p) {
+            try {
+              p = JSON.parse(c);
+            } catch (_) {}
+          }
+          if (!p || !Array.isArray(p.senses) || p.senses.length === 0) {
+            const plain = c.replace(/[{}\\[\\]"]/g, "").trim();
+            p = {
+              syllables: [],
+              pronunciations: [],
+              senses: [
+                {
+                  pos: "",
+                  definition: [
+                    {
+                      translations: [plain || l],
+                      targetTranslation: "",
+                      examples: [],
+                    },
+                  ],
+                },
+              ],
+              inflections: [],
+              etymology: "",
+              examples: [],
+              phrases: [],
+              synonyms: [],
+              relatedWords: [],
+            };
+          }
+          ${setIdentifier}(p);
+        `);
+        block.node.body.splice(index, 2, ...newNodes);
+      }
+    },
+  });
+  traverse(ast, {
     CallExpression(callPath) {
       const callee = callPath.node.callee;
       if (
@@ -770,6 +1299,94 @@ async function formatJs(source) {
   });
 }
 
+function patchSchemesDefault(ast, area) {
+  const defaultSchemesAst = parser.parseExpression(`
+    [
+      {
+        name: "Oxford",
+        scheme: "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+        from: ["*"],
+        to: ["*"],
+        codes: { en: "english" },
+        options: { width: 450, height: 750, type: "popup" }
+      },
+      {
+        name: "Collins",
+        scheme: "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+        from: ["*"],
+        to: ["*"],
+        codes: { en: "english" },
+        options: { width: 450, height: 750, type: "popup" }
+      },
+      {
+        name: "Longman",
+        scheme: "https://www.ldoceonline.com/dictionary/$TEXT",
+        from: ["*"],
+        to: ["*"],
+        codes: { en: "english" },
+        options: { width: 450, height: 750, type: "popup" }
+      },
+      {
+        name: "Youdao",
+        scheme: "https://dict.youdao.com/w/$TEXT",
+        from: ["*"],
+        to: ["*"],
+        codes: {},
+        options: { width: 450, height: 750, type: "popup" }
+      }
+    ]
+  `);
+
+  traverse(ast, {
+    ObjectProperty(path) {
+      if (
+        path.node.key?.name === "schemes" &&
+        t.isArrayExpression(path.node.value) &&
+        path.node.value.elements.length === 0 &&
+        path.parentPath.isObjectExpression()
+      ) {
+        const propNames = path.parentPath.node.properties.map((p) => p.key?.name);
+        if (propNames.includes("partOfSpeech") && propNames.includes("PRACTICE_LIMIT")) {
+          path.node.value = t.cloneNode(defaultSchemesAst);
+        }
+      }
+    },
+  });
+
+  if (area === "video") {
+    traverse(ast, {
+      MemberExpression(path) {
+        if (
+          path.node.property?.name === "schemes" &&
+          path.node.object?.name === "f" &&
+          path.parentPath.isMemberExpression() &&
+          path.parentPath.node.property?.name === "map"
+        ) {
+          // Replace f.schemes with (f.schemes && f.schemes.length > 0 ? f.schemes : defaultSchemes)
+          path.replaceWith(
+            t.conditionalExpression(
+              t.logicalExpression(
+                "&&",
+                t.memberExpression(t.identifier("f"), t.identifier("schemes")),
+                t.binaryExpression(
+                  ">",
+                  t.memberExpression(
+                    t.memberExpression(t.identifier("f"), t.identifier("schemes")),
+                    t.identifier("length"),
+                  ),
+                  t.numericLiteral(0),
+                ),
+              ),
+              t.memberExpression(t.identifier("f"), t.identifier("schemes")),
+              t.cloneNode(defaultSchemesAst),
+            ),
+          );
+        }
+      },
+    });
+  }
+}
+
 async function buildMain(name, config) {
   const sourcePath = path.join(root, config.source);
   const source = fs.readFileSync(sourcePath, "utf8");
@@ -797,9 +1414,13 @@ async function buildMain(name, config) {
     });
   }
   const applied = applySemanticRenames(name, ast);
+  if (name === "background" || name === "reader" || name === "video") {
+    patchSchemesDefault(ast, name);
+  }
   let sourceComponents = [];
   if (name === "background") installBackgroundStructuredAiBridge(ast);
   if (name === "reader") {
+    patchExtensionClientEmit(ast, "reader");
     sourceComponents = installUiSourceFactories(ast, {
       area: "reader",
       sourceRoot: path.join(root, "src", "reader"),
@@ -810,8 +1431,12 @@ async function buildMain(name, config) {
       minimumComponents: 33,
       globals: ["SpeechSynthesisUtterance"],
     });
+    patchReaderBrandIcons(ast);
   }
   if (name === "video") {
+    patchExtensionClientEmit(ast, "video");
+    patchChineseSubtitleVariants(ast);
+    patchYouTubeCaptionStartup(ast);
     sourceComponents = installUiSourceFactories(ast, {
       area: "video",
       sourceRoot: path.join(root, "src", "video", "ui"),
@@ -915,6 +1540,32 @@ for (const filename of [
     path.join(root, "assets", filename),
   );
 }
+
+// Assemble clean, standalone dist/ distribution directory
+const distDir = path.join(root, "dist");
+fs.rmSync(distDir, { recursive: true, force: true });
+fs.mkdirSync(distDir, { recursive: true });
+
+// 1. Copy manifest.json
+fs.copyFileSync(path.join(root, "manifest.json"), path.join(distDir, "manifest.json"));
+
+// 2. Copy HTML pages
+for (const filename of ["index.html", "popup.html", "byok.html", "site-rules.html"]) {
+  fs.copyFileSync(path.join(root, filename), path.join(distDir, filename));
+}
+
+// 3. Copy _locales
+fs.cpSync(path.join(root, "_locales"), path.join(distDir, "_locales"), {
+  recursive: true,
+  force: true,
+});
+
+// 4. Copy assets directory
+fs.cpSync(path.join(root, "assets"), path.join(distDir, "assets"), {
+  recursive: true,
+  force: true,
+});
+
 const reportsDir = path.join(root, "artifacts", "reports");
 fs.mkdirSync(reportsDir, { recursive: true });
 fs.writeFileSync(

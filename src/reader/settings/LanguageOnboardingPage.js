@@ -63,56 +63,6 @@ export function recoverLanguageOnboardingPage(dependencies) {
                   }),
                 ],
               }),
-              (0, jsxRuntime.jsxs)("div", {
-                className: "setting-step",
-                children: [
-                  (0, jsxRuntime.jsxs)("div", {
-                    className: "step-item",
-                    children: [
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "step-item-icon",
-                        children: (0, jsxRuntime.jsx)(ya, {}),
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "step-item-title current",
-                        children: a("setting_guide_step_1"),
-                      }),
-                    ],
-                  }),
-                  (0, jsxRuntime.jsxs)("div", {
-                    className: "step-item",
-                    children: [
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "step-item-icon",
-                        children: (0, jsxRuntime.jsx)("div", {
-                          className: "step-num",
-                          children: "2",
-                        }),
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "step-item-title",
-                        children: a("setting_guide_step_2"),
-                      }),
-                    ],
-                  }),
-                  (0, jsxRuntime.jsxs)("div", {
-                    className: "step-item",
-                    children: [
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "step-item-icon",
-                        children: (0, jsxRuntime.jsx)("div", {
-                          className: "step-num",
-                          children: "3",
-                        }),
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "step-item-title",
-                        children: a("setting_guide_step_3"),
-                      }),
-                    ],
-                  }),
-                ],
-              }),
             ],
           }),
           (0, jsxRuntime.jsx)("div", {
@@ -309,11 +259,11 @@ export function recoverLanguageOnboardingPage(dependencies) {
                                       },
                                     }),
                                   ),
-                                  i("/setting/setting-signup");
+                                  extensionClient.toggleSlider();
                               }),
                             children: [
                               (0, jsxRuntime.jsx)("span", {
-                                children: a("setting_guide_next"),
+                                children: a("modalConfirm"),
                               }),
                               (0, jsxRuntime.jsx)(Ca, {}),
                             ],

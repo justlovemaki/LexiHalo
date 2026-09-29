@@ -219,61 +219,6 @@ export function recoverTranslationEngineSettings(dependencies) {
             (0, jsxRuntime.jsx)("div", {
               className: classNames()("engine-select-card-gradient", d),
             }),
-            (0, jsxRuntime.jsxs)("div", {
-              id: "lexihalo-quick-cache-host",
-              children: [
-                (0, jsxRuntime.jsx)("div", {
-                  className: "slider-label lg-label",
-                  children: "缓存管理",
-                }),
-                (0, jsxRuntime.jsx)("div", {
-                  className: "item-slider-group",
-                  children: (0, jsxRuntime.jsxs)("div", {
-                    className: "item-slider",
-                    children: [
-                      (0, jsxRuntime.jsxs)("div", {
-                        className: "item-slider-content",
-                        children: [
-                          (0, jsxRuntime.jsx)("div", {
-                            className: "item-left",
-                            children: (0, jsxRuntime.jsx)("span", {
-                              children: "快速翻译缓存",
-                            }),
-                          }),
-                          (0, jsxRuntime.jsx)("div", {
-                            className: "item-right",
-                            children: (0, jsxRuntime.jsx)("div", {
-                              className: "right-link",
-                              "data-lexihalo-cache-scope": "quick",
-                              onClick: (e) => {
-                                e.stopPropagation(),
-                                  window.lexihaloClearScopedCache
-                                    ? window.lexihaloClearScopedCache("quick")
-                                    : window.postMessage(
-                                        {
-                                          eventName:
-                                            "lexihalo:cache-clear-request",
-                                          scope: "quick",
-                                        },
-                                        "*",
-                                      );
-                              },
-                              children: (0, jsxRuntime.jsx)("span", {
-                                children: "清理",
-                              }),
-                            }),
-                          }),
-                        ],
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "item-slider-des",
-                        children: "仅清除快速翻译窗口使用的缓存",
-                      }),
-                    ],
-                  }),
-                }),
-              ],
-            }),
             (0, jsxRuntime.jsx)("div", {
               className: "engine-tab",
               children: [

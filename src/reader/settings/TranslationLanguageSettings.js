@@ -7,6 +7,8 @@ export function recoverTranslationLanguageSettings(dependencies) {
   const Ta = dependencies.Ta;
   const an = dependencies.an;
   const classNames = dependencies.classNames;
+  const extensionClient = dependencies.extensionClient;
+  const immersiveTranslator = dependencies.immersiveTranslator;
   const jsxRuntime = dependencies.jsxRuntime;
   const so = dependencies.so;
   const useApiClient = dependencies.useApiClient;
@@ -35,13 +37,21 @@ export function recoverTranslationLanguageSettings(dependencies) {
               key: "translation",
               value: e,
             });
-            yield o(r, !0),
-              a(),
-              n &&
-                i.setAttributes({
-                  native: e,
-                  target: t.subtitle,
-                });
+            yield o(r, !0);
+            a();
+            immersiveTranslator.enabled &&
+              (yield immersiveTranslator.reload());
+            extensionClient.emit("forward", ["background"], {
+              name: "fulltext-translation-reload",
+              body: {
+                reason: "translation-language-change",
+              },
+            });
+            n &&
+              i.setAttributes({
+                native: e,
+                target: t.subtitle,
+              });
           }),
           new Promise((e, t) => {
             var n = (e) => {

@@ -21,49 +21,6 @@ export function recoverDualSubtitleSettings(dependencies) {
       { dispatch: i } = useDispatchBridge(),
       a = (useApiClient(!0), !1 !== n.dualSubtitleEnabled),
       { locale: o } = useLocale();
-    const renderCacheControl = (label, description, scope) =>
-      (0, jsxRuntime.jsxs)("div", {
-        className: "item-slider",
-        children: [
-          (0, jsxRuntime.jsxs)("div", {
-            className: "item-slider-content",
-            children: [
-              (0, jsxRuntime.jsx)("div", {
-                className: "item-left",
-                children: (0, jsxRuntime.jsx)("span", { children: label }),
-              }),
-              (0, jsxRuntime.jsx)("div", {
-                className: "item-right",
-                children: (0, jsxRuntime.jsx)("div", {
-                  className: "right-link",
-                  "data-lexihalo-cache-scope": scope,
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    if (window.lexihaloClearScopedCache) {
-                      window.lexihaloClearScopedCache(scope);
-                    } else {
-                      window.postMessage(
-                        {
-                          eventName: "lexihalo:cache-clear-request",
-                          scope,
-                        },
-                        "*",
-                      );
-                    }
-                  },
-                  children: (0, jsxRuntime.jsx)("span", {
-                    children: "清理",
-                  }),
-                }),
-              }),
-            ],
-          }),
-          (0, jsxRuntime.jsx)("div", {
-            className: "item-slider-des",
-            children: description,
-          }),
-        ],
-      });
     return (0, jsxRuntime.jsxs)("div", {
       className: "rd-slider-inside",
       id: "trancy-slider",
@@ -157,30 +114,6 @@ export function recoverDualSubtitleSettings(dependencies) {
                   }),
                 ],
               }),
-            }),
-            (0, jsxRuntime.jsxs)("div", {
-              id: "lexihalo-subtitle-ai-sidebar-host",
-              children: [
-                (0, jsxRuntime.jsx)("div", {
-                  className: "slider-label lg-label",
-                  children: "缓存管理",
-                }),
-                (0, jsxRuntime.jsx)("div", {
-                  className: "item-slider-group",
-                  children: [
-                    renderCacheControl(
-                      "重新载入当前字幕",
-                      "重置页面字幕并优先复用本机 AI 缓存，不重新下载字幕轨道",
-                      "subtitle",
-                    ),
-                    renderCacheControl(
-                      "彻底清除 AI 字幕缓存",
-                      "删除持久 AI 修复与翻译结果，下次播放时重新请求模型",
-                      "ai-subtitle",
-                    ),
-                  ],
-                }),
-              ],
             }),
             (0, jsxRuntime.jsx)("div", {
               className: "slider-label lg-label",

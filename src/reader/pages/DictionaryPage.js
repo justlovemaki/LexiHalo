@@ -103,11 +103,20 @@ export function recoverDictionaryPage(dependencies) {
             const { translatorService: r } =
                 yield extensionClient.getStateChunks({
                   only: ["translatorService"],
-                }),
-              i = r.engines.find(
-                (e) =>
-                  "user" === e.type || String(e._id || "").startsWith("byok-"),
-              );
+                });
+            const isAiEngine = (e) =>
+              Boolean(e) &&
+              ("user" === e.type ||
+                String(e._id || "").startsWith("byok-") ||
+                "built-in" !== e.type);
+            const preferredEngine =
+              [r?.sentence, r?.subtitle, r?.fulltext].find(
+                (e) => isAiEngine(e) && r.engines?.some((x) => x._id === e._id),
+              ) ||
+              r.engines?.find(isAiEngine);
+            const i =
+              preferredEngine &&
+              (r.engines?.find((e) => e._id === preferredEngine._id) || preferredEngine);
             if (!i) throw new Error("请先在 BYOK 设置中配置 AI 模型");
             const a = `You are a professional bilingual lexicographer. Analyze one word from ${t} and explain it in ${n}. Return only valid JSON without Markdown or extra text.`,
               o =
@@ -150,16 +159,48 @@ export function recoverDictionaryPage(dependencies) {
               throw new Error(
                 (null == s[0] ? void 0 : s[0].message) || "AI 详解生成失败",
               );
-            let c = String(l)
-                .trim()
-                .replace(/^```(?:json)?\s*/i, "")
-                .replace(/\s*```$/i, ""),
-              u = c.indexOf("{"),
+            let c = String(l).trim();
+            const fenceMatch = c.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (fenceMatch) c = fenceMatch[1].trim();
+            let u = c.indexOf("{"),
               d = c.lastIndexOf("}");
-            u >= 0 && d > u && (c = c.slice(u, d + 1));
-            const p = JSON.parse(c);
-            if (!p || !Array.isArray(p.senses))
-              throw new Error("AI 返回格式无效");
+            let p = null;
+            if (u >= 0 && d > u) {
+              try {
+                p = JSON.parse(c.slice(u, d + 1));
+              } catch (_) {}
+            }
+            if (!p) {
+              try {
+                p = JSON.parse(c);
+              } catch (_) {}
+            }
+            if (!p || !Array.isArray(p.senses) || p.senses.length === 0) {
+              // Fallback: build a minimal valid structure from unstructured AI text or plain translation
+              const plain = c.replace(/[{}\[\]"]/g, "").trim();
+              p = {
+                syllables: [],
+                pronunciations: [],
+                senses: [
+                  {
+                    pos: "",
+                    definition: [
+                      {
+                        translations: [plain || l],
+                        targetTranslation: "",
+                        examples: [],
+                      },
+                    ],
+                  },
+                ],
+                inflections: [],
+                etymology: "",
+                examples: [],
+                phrases: [],
+                synonyms: [],
+                relatedWords: [],
+              };
+            }
             B(p);
           } catch (e) {
             V({
@@ -1026,7 +1067,38 @@ export function recoverDictionaryPage(dependencies) {
                   }),
                   (0, jsxRuntime.jsx)("div", {
                     className: "item-dict-wrapper",
-                    children: g.schemes.map((e, t) =>
+                    children: (g.schemes && g.schemes.length > 0
+                      ? g.schemes
+                      : [
+                          {
+                            name: "Oxford",
+                            scheme:
+                              "https://www.oxfordlearnersdictionaries.com/definition/english/$TEXT",
+                            codes: { en: "english" },
+                            options: { width: 450, height: 750, type: "popup" },
+                          },
+                          {
+                            name: "Collins",
+                            scheme:
+                              "https://www.collinsdictionary.com/dictionary/english/$TEXT",
+                            codes: { en: "english" },
+                            options: { width: 450, height: 750, type: "popup" },
+                          },
+                          {
+                            name: "Longman",
+                            scheme:
+                              "https://www.ldoceonline.com/dictionary/$TEXT",
+                            codes: { en: "english" },
+                            options: { width: 450, height: 750, type: "popup" },
+                          },
+                          {
+                            name: "Youdao",
+                            scheme: "https://dict.youdao.com/w/$TEXT",
+                            codes: {},
+                            options: { width: 450, height: 750, type: "popup" },
+                          },
+                        ]
+                    ).map((e, t) =>
                       (0, jsxRuntime.jsx)(
                         "div",
                         {

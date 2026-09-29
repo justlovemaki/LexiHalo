@@ -306,63 +306,7 @@ export function recoverSelectionTranslationSettings(dependencies) {
                   }),
                 ),
               }),
-            (0, jsxRuntime.jsxs)("div", {
-              id: "lexihalo-selection-cache-host",
-              children: [
-                (0, jsxRuntime.jsx)("div", {
-                  className: "slider-label lg-label",
-                  children: "缓存管理",
-                }),
-                (0, jsxRuntime.jsx)("div", {
-                  className: "item-slider-group",
-                  children: (0, jsxRuntime.jsxs)("div", {
-                    className: "item-slider",
-                    children: [
-                      (0, jsxRuntime.jsxs)("div", {
-                        className: "item-slider-content",
-                        children: [
-                          (0, jsxRuntime.jsx)("div", {
-                            className: "item-left",
-                            children: (0, jsxRuntime.jsx)("span", {
-                              children: "划词翻译缓存",
-                            }),
-                          }),
-                          (0, jsxRuntime.jsx)("div", {
-                            className: "item-right",
-                            children: (0, jsxRuntime.jsx)("div", {
-                              className: "right-link",
-                              "data-lexihalo-cache-scope": "selection",
-                              onClick: (e) => {
-                                e.stopPropagation(),
-                                  window.lexihaloClearScopedCache
-                                    ? window.lexihaloClearScopedCache(
-                                        "selection",
-                                      )
-                                    : window.postMessage(
-                                        {
-                                          eventName:
-                                            "lexihalo:cache-clear-request",
-                                          scope: "selection",
-                                        },
-                                        "*",
-                                      );
-                              },
-                              children: (0, jsxRuntime.jsx)("span", {
-                                children: "清理",
-                              }),
-                            }),
-                          }),
-                        ],
-                      }),
-                      (0, jsxRuntime.jsx)("div", {
-                        className: "item-slider-des",
-                        children: "仅清除划词、句子和词典回退翻译缓存",
-                      }),
-                    ],
-                  }),
-                }),
-              ],
-            }),
+            null,
             (0, jsxRuntime.jsxs)("div", {
               className: "bottom-tips",
               children: [

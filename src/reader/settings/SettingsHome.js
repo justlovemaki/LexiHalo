@@ -509,6 +509,171 @@ export function recoverSettingsHome(dependencies) {
                       }),
                     ],
                   }),
+                  (0, jsxRuntime.jsxs)("div", {
+                    className: "slider-item-group",
+                    id: "lexihalo-global-cache-group",
+                    children: [
+                      (0, jsxRuntime.jsx)("div", {
+                        className: "group-label",
+                        children: "缓存管理",
+                      }),
+                      (0, jsxRuntime.jsxs)("div", {
+                        className: "slider-item",
+                        style: { cursor: "default" },
+                        children: [
+                          (0, jsxRuntime.jsxs)("div", {
+                            className: "label",
+                            children: [
+                              (0, jsxRuntime.jsx)("div", {
+                                className: "t-icon icon-20",
+                                children: (0, jsxRuntime.jsx)(ua, {}),
+                              }),
+                              (0, jsxRuntime.jsxs)("div", {
+                                children: [
+                                  (0, jsxRuntime.jsx)("div", {
+                                    className: "name",
+                                    children: "一键清理所有缓存",
+                                  }),
+                                  (0, jsxRuntime.jsx)("div", {
+                                    className: "tips",
+                                    children:
+                                      "彻底清除双语字幕、网页沉浸式翻译、划词释义与快速翻译全部缓存",
+                                  }),
+                                ],
+                              }),
+                            ],
+                          }),
+                          (0, jsxRuntime.jsx)("div", {
+                            className: "right-action",
+                            children: (0, jsxRuntime.jsx)("div", {
+                              className: "right-link",
+                              "data-lexihalo-cache-scope": "all",
+                              onClick: (e) => {
+                                e.stopPropagation();
+                                window.lexihaloClearScopedCache
+                                  ? window.lexihaloClearScopedCache("all")
+                                  : window.postMessage(
+                                      {
+                                        eventName:
+                                          "lexihalo:cache-clear-request",
+                                        scope: "all",
+                                      },
+                                      "*",
+                                    );
+                              },
+                              children: (0, jsxRuntime.jsx)("span", {
+                                children: "清理全部",
+                              }),
+                            }),
+                          }),
+                        ],
+                      }),
+                      (0, jsxRuntime.jsxs)("div", {
+                        className: "slider-item",
+                        style: { cursor: "default" },
+                        children: [
+                          (0, jsxRuntime.jsxs)("div", {
+                            className: "label",
+                            children: [
+                              (0, jsxRuntime.jsx)("div", {
+                                className: "t-icon icon-20 red-icon",
+                                children: (0, jsxRuntime.jsx)(xi, {}),
+                              }),
+                              (0, jsxRuntime.jsxs)("div", {
+                                children: [
+                                  (0, jsxRuntime.jsx)("div", {
+                                    className: "name",
+                                    children: "重新载入当前字幕",
+                                  }),
+                                  (0, jsxRuntime.jsx)("div", {
+                                    className: "tips",
+                                    children:
+                                      "重置页面字幕并优先复用本机 AI 缓存，不重新下载字幕轨道",
+                                  }),
+                                ],
+                              }),
+                            ],
+                          }),
+                          (0, jsxRuntime.jsx)("div", {
+                            className: "right-action",
+                            children: (0, jsxRuntime.jsx)("div", {
+                              className: "right-link",
+                              "data-lexihalo-cache-scope": "subtitle",
+                              onClick: (e) => {
+                                e.stopPropagation();
+                                window.lexihaloClearScopedCache
+                                  ? window.lexihaloClearScopedCache("subtitle")
+                                  : window.postMessage(
+                                      {
+                                        eventName:
+                                          "lexihalo:cache-clear-request",
+                                        scope: "subtitle",
+                                      },
+                                      "*",
+                                    );
+                              },
+                              children: (0, jsxRuntime.jsx)("span", {
+                                children: "清理",
+                              }),
+                            }),
+                          }),
+                        ],
+                      }),
+                      (0, jsxRuntime.jsxs)("div", {
+                        className: "slider-item",
+                        style: { cursor: "default" },
+                        children: [
+                          (0, jsxRuntime.jsxs)("div", {
+                            className: "label",
+                            children: [
+                              (0, jsxRuntime.jsx)("div", {
+                                className: "t-icon icon-20 red-icon",
+                                children: (0, jsxRuntime.jsx)(xi, {}),
+                              }),
+                              (0, jsxRuntime.jsxs)("div", {
+                                children: [
+                                  (0, jsxRuntime.jsx)("div", {
+                                    className: "name",
+                                    children: "彻底清除 AI 字幕缓存",
+                                  }),
+                                  (0, jsxRuntime.jsx)("div", {
+                                    className: "tips",
+                                    children:
+                                      "删除持久 AI 字幕分段修复与翻译结果，下次播放时重新请求模型",
+                                  }),
+                                ],
+                              }),
+                            ],
+                          }),
+                          (0, jsxRuntime.jsx)("div", {
+                            className: "right-action",
+                            children: (0, jsxRuntime.jsx)("div", {
+                              className: "right-link",
+                              "data-lexihalo-cache-scope": "ai-subtitle",
+                              onClick: (e) => {
+                                e.stopPropagation();
+                                window.lexihaloClearScopedCache
+                                  ? window.lexihaloClearScopedCache(
+                                      "ai-subtitle",
+                                    )
+                                  : window.postMessage(
+                                      {
+                                        eventName:
+                                          "lexihalo:cache-clear-request",
+                                        scope: "ai-subtitle",
+                                      },
+                                      "*",
+                                    );
+                              },
+                              children: (0, jsxRuntime.jsx)("span", {
+                                children: "清理",
+                              }),
+                            }),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
                   null,
                 ],
               }),

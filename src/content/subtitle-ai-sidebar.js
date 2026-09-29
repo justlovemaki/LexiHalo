@@ -90,6 +90,7 @@
     const scope = event.data.scope;
     if (
       ![
+        "all",
         "ai-subtitle",
         "subtitle",
         "subtitle-refresh",

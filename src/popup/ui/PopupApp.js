@@ -164,25 +164,10 @@ export function recoverPopupApp(dependencies) {
                 onClick: () => window.close(),
                 children: l("popup_got_it"),
               })
-            : (0, jsxRuntime.jsxs)(jsxRuntime.Fragment, {
-                children: [
-                  (0, jsxRuntime.jsx)("button", {
-                    className: "trancy-popup-btn primary",
-                    onClick: () =>
-                      openExtensionPage(
-                        (null == r ? void 0 : r.dashboardUrl) || "byok.html",
-                      ),
-                    children: l("popup_open_dashboard"),
-                  }),
-                  (0, jsxRuntime.jsx)("button", {
-                    className: "trancy-popup-btn",
-                    onClick: () =>
-                      openExtensionPage(
-                        (null == r ? void 0 : r.guideUrl) || "byok.html",
-                      ),
-                    children: l("popup_user_guide"),
-                  }),
-                ],
+            : (0, jsxRuntime.jsx)("button", {
+                className: "trancy-popup-btn primary",
+                onClick: () => window.close(),
+                children: l("popup_got_it"),
               }),
         }),
       ],

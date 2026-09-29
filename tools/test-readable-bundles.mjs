@@ -78,8 +78,8 @@ try {
   context = await chromium.launchPersistentContext(profile, {
     headless: false,
     args: [
-      `--disable-extensions-except=${root}`,
-      `--load-extension=${root}`,
+      `--disable-extensions-except=${path.join(root, "dist")}`,
+      `--load-extension=${path.join(root, "dist")}`,
       "--no-first-run",
     ],
   });
@@ -505,23 +505,67 @@ try {
     window.postMessage(
       {
         eventName: "trancy:slider-toggle",
-        path: "/setting/dual-subtitle",
+        path: "/",
       },
       "*",
     ),
   );
+  await reader
+    .locator("#lexihalo-global-cache-group")
+    .waitFor({ timeout: 10000 });
   await reader
     .getByText("重新载入当前字幕", { exact: true })
     .waitFor({ timeout: 10000 });
   await reader
     .getByText("彻底清除 AI 字幕缓存", { exact: true })
     .waitFor({ timeout: 10000 });
+  for (const removedCacheControl of [
+    "网页沉浸式翻译缓存",
+    "划词与句子翻译缓存",
+    "快速翻译缓存",
+  ]) {
+    if (
+      (await reader.getByText(removedCacheControl, { exact: true }).count()) !==
+      0
+    ) {
+      throw new Error(`Obsolete cache control is still visible: ${removedCacheControl}`);
+    }
+  }
+
+  await translatedNode.evaluate((node) =>
+    node.setAttribute("data-language-regression-old", "1"),
+  );
+  await reader.evaluate(() =>
+    window.postMessage(
+      {
+        eventName: "trancy:slider-toggle",
+        path: "/setting/language/translation",
+      },
+      "*",
+    ),
+  );
+  const japaneseLanguage = reader
+    .locator(".item-slider", { hasText: "日本語" })
+    .first();
+  await japaneseLanguage.waitFor({ state: "visible", timeout: 10000 });
+  await japaneseLanguage.click();
+  await reader
+    .locator('[data-language-regression-old="1"]')
+    .waitFor({ state: "detached", timeout: 10000 });
+  const languageState = await requestBackground("getState", {});
+  if (languageState?.data?.setting?.language?.translation !== "ja") {
+    throw new Error("General translation language change was not persisted");
+  }
+  await reader
+    .locator("font.xt-dual, xt-dual, xt-trans")
+    .first()
+    .waitFor({ state: "attached", timeout: 10000 });
 
   await context.route("https://www.youtube.com/**", (route) =>
     route.fulfill({
       status: 200,
       contentType: "text/html",
-      body: `<!doctype html><html><body><div id="movie_player" class="html5-video-player"><video src="data:video/mp4;base64,"></video><button class="ytp-subtitles-button" aria-pressed="true"></button><button class="ytp-fullscreen-button"></button></div><script>const p=document.getElementById('movie_player');const v=p.querySelector('video');Object.defineProperty(v,'duration',{value:60});p.getPlayerState=()=>1;p.getPlayerResponse=()=>({videoDetails:{videoId:'readable-test',title:'Readable Test',lengthSeconds:'60'},captions:{playerCaptionsTracklistRenderer:{captionTracks:[{baseUrl:'${localUrl}caption',languageCode:'en',vssId:'.en',name:{simpleText:'English'}}]}}});p.getVolume=()=>100;p.setVolume=()=>{};p.play=()=>{};p.pause=()=>{};p.toggleSubtitles=()=>{};</script></body></html>`,
+      body: `<!doctype html><html><body><div id="movie_player" class="html5-video-player"><video src="data:video/mp4;base64,"></video><button class="ytp-subtitles-button" aria-pressed="true"></button><button class="ytp-fullscreen-button"></button></div><script>const p=document.getElementById('movie_player');const v=p.querySelector('video');Object.defineProperty(v,'duration',{value:60});p.getPlayerState=()=>1;p.getPlayerResponse=()=>({videoDetails:{videoId:'readable-test',title:'Readable Test',lengthSeconds:'60'},captions:{playerCaptionsTracklistRenderer:{captionTracks:[{baseUrl:'${localUrl}caption',languageCode:'en',vssId:'.en',name:{simpleText:'English'}}]}}});p.getVolume=()=>100;p.setVolume=()=>{};p.play=()=>{};p.pause=()=>{};p.toggleSubtitlesCalls=[];p.toggleSubtitles=(enabled)=>{p.toggleSubtitlesCalls.push(enabled);p.querySelector('.ytp-subtitles-button').setAttribute('aria-pressed',String(enabled));};</script></body></html>`,
     }),
   );
   const video = await context.newPage();
@@ -535,6 +579,25 @@ try {
   await video
     .locator("#xt-toggle-button")
     .waitFor({ state: "attached", timeout: 30000 });
+  await video.locator("#xt-toggle-button .trancy-button-logo").click();
+  await video
+    .locator("#xt-toggle-button .trancy-panel-menu.visible")
+    .waitFor({ timeout: 10000 });
+  const primaryDownloadCount = await video
+    .locator("#xt-toggle-button .trancy-primary-panel-menu")
+    .getByText("下载完整双语字幕 (.srt)", { exact: true })
+    .count();
+  if (primaryDownloadCount !== 0) {
+    throw new Error("Bilingual download must not appear beside More Features");
+  }
+  await video
+    .locator("#xt-toggle-button .trancy-primary-panel-menu")
+    .getByText("更多功能", { exact: true })
+    .evaluate((label) => label.parentElement?.click());
+  await video
+    .locator("#xt-toggle-button .trancy-second-panel-menu")
+    .getByText("下载完整双语字幕 (.srt)", { exact: true })
+    .waitFor({ timeout: 10000 });
   const language = await video.evaluate(() => ({
     detected: window.detectLanguage(
       "This is a sufficiently long English sentence.",
@@ -556,9 +619,231 @@ try {
     language.aiScheduler?.maxConcurrent !== 2 ||
     language.aiScheduler?.stableBatch !== 6 ||
     language.aiScheduler?.retryDelayMs !== 2000 ||
-    language.aiScheduler?.seekSettleMs !== 0
+    language.aiScheduler?.seekSettleMs !== 0 ||
+    language.aiScheduler?.baselineFallbackForPreload !== true
   )
     throw new Error(`Language/video regression: ${JSON.stringify(language)}`);
+
+  const youtubeBaselineFallback = await video.evaluate(() => {
+    const provider = window.captionProvider;
+    const originalCache = provider.captionCache.get(provider.id);
+    const originalEngine = provider.engine;
+    const originalBackfill = provider.backfillBaseline;
+    const originalLastPretransCurrent = provider.lastPretransCurrent;
+    let calls = 0;
+    provider.captionCache.set(provider.id, {
+      ...(originalCache || {}),
+      lines: [],
+      builtinLines: [],
+    });
+    provider.engine = {
+      _id: "byok-baseline-regression",
+      model: "regression-model",
+      provider: "OpenAI",
+    };
+    provider.backfillBaseline = () => {
+      calls += 1;
+    };
+    provider.lastPretransCurrent = provider.current;
+    provider.drivePretranslate();
+    provider.backfillBaseline = originalBackfill;
+    provider.engine = originalEngine;
+    provider.lastPretransCurrent = originalLastPretransCurrent;
+    if (originalCache) provider.captionCache.set(provider.id, originalCache);
+    else provider.captionCache.clear();
+    return {
+      calls,
+      platform: provider.platform,
+      hasExternalCorpus: provider.hasExternalCorpus,
+    };
+  });
+  if (
+    youtubeBaselineFallback.platform !== "youtube" ||
+    youtubeBaselineFallback.hasExternalCorpus ||
+    youtubeBaselineFallback.calls !== 1
+  ) {
+    throw new Error(
+      `YouTube baseline fallback did not match streaming platforms: ${JSON.stringify(youtubeBaselineFallback)}`,
+    );
+  }
+
+  const nativeCaptionSuppression = await video.evaluate(async () => {
+    const provider = window.captionProvider;
+    const player = document.querySelector(".html5-video-player");
+    const button = player.querySelector(".ytp-subtitles-button");
+
+    provider.restore();
+    button.setAttribute("aria-pressed", "true");
+    player.toggleSubtitlesCalls.length = 0;
+    provider.suppressNativeCaptions();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const disabledWhileLexiHaloIsActive =
+      button.getAttribute("aria-pressed") === "false";
+    provider.restore();
+    const restoredWhenLexiHaloStops =
+      button.getAttribute("aria-pressed") === "true";
+    const enabledCycleCalls = [...player.toggleSubtitlesCalls];
+
+    button.setAttribute("aria-pressed", "false");
+    player.toggleSubtitlesCalls.length = 0;
+    provider.suppressNativeCaptions();
+    provider.restore();
+    const stayedDisabledWhenOriginallyDisabled =
+      button.getAttribute("aria-pressed") === "false";
+    const disabledCycleCalls = [...player.toggleSubtitlesCalls];
+
+    return {
+      disabledWhileLexiHaloIsActive,
+      restoredWhenLexiHaloStops,
+      stayedDisabledWhenOriginallyDisabled,
+      enabledCycleCalls,
+      disabledCycleCalls,
+    };
+  });
+  if (
+    !nativeCaptionSuppression.disabledWhileLexiHaloIsActive ||
+    !nativeCaptionSuppression.restoredWhenLexiHaloStops ||
+    !nativeCaptionSuppression.stayedDisabledWhenOriginallyDisabled ||
+    nativeCaptionSuppression.enabledCycleCalls[0] !== false ||
+    nativeCaptionSuppression.enabledCycleCalls.at(-1) !== true ||
+    nativeCaptionSuppression.disabledCycleCalls.includes(true)
+  ) {
+    throw new Error(
+      `YouTube native caption suppression failed: ${JSON.stringify(nativeCaptionSuppression)}`,
+    );
+  }
+
+  const chineseVariantTest = await video.evaluate(() => {
+    const provider = window.captionProvider;
+    const originalCache = provider.captionCache.get(provider.id);
+    const originalTarget = provider.to;
+    const originalLearningLanguage = provider.learningLang;
+    const check = (text, target) => {
+      const lines = Array.from({ length: 4 }, (_, index) => ({
+        idx: 200 + index,
+        start: index * 1000,
+        end: (index + 1) * 1000,
+        text,
+        originalText: text,
+      }));
+      provider.captionCache.set(provider.id, {
+        ...(originalCache || {}),
+        lines,
+        builtinLines: lines,
+      });
+      provider.langVoteCache.clear();
+      provider.to = target;
+      const detected = provider.corpusLang();
+      const same = provider.syncCorpusSameLang();
+      provider.learningLang = "zh-CN";
+      provider.evalLookupAllowed();
+      return {
+        detected,
+        same,
+        marked: provider.lines.every((line) => line.sameLangTo === target),
+        lookupAllowed: provider.isLookupAllowed,
+      };
+    };
+    const simplifiedToTraditional = check(
+      "这个视频讲述软件开发与学习",
+      "zh-Hant",
+    );
+    const traditionalToTraditional = check(
+      "這個影片講述軟體開發與學習",
+      "zh-Hant",
+    );
+    const traditionalToSimplified = check(
+      "這個影片講述軟體開發與學習",
+      "zh-CN",
+    );
+    if (originalCache) provider.captionCache.set(provider.id, originalCache);
+    else provider.captionCache.clear();
+    provider.langVoteCache.clear();
+    provider.to = originalTarget;
+    provider.learningLang = originalLearningLanguage;
+    return {
+      simplifiedToTraditional,
+      traditionalToTraditional,
+      traditionalToSimplified,
+    };
+  });
+  if (
+    chineseVariantTest.simplifiedToTraditional.detected !== "zh-CN" ||
+    chineseVariantTest.simplifiedToTraditional.same ||
+    chineseVariantTest.simplifiedToTraditional.marked ||
+    chineseVariantTest.traditionalToTraditional.detected !== "zh-Hant" ||
+    !chineseVariantTest.traditionalToTraditional.same ||
+    !chineseVariantTest.traditionalToTraditional.marked ||
+    !chineseVariantTest.traditionalToTraditional.lookupAllowed ||
+    chineseVariantTest.traditionalToSimplified.detected !== "zh-Hant" ||
+    chineseVariantTest.traditionalToSimplified.same ||
+    chineseVariantTest.traditionalToSimplified.marked
+  ) {
+    throw new Error(
+      `Chinese subtitle variant detection failed: ${JSON.stringify(chineseVariantTest)}`,
+    );
+  }
+
+  const languageReset = await video.evaluate(() => {
+    const provider = window.captionProvider;
+    const beforeGeneration = provider.translationGeneration;
+    const translatedLine = {
+      idx: 98,
+      start: 0,
+      end: 1000,
+      text: "repaired source",
+      originalText: "raw source",
+      translation: "旧译文",
+      AITranslation: "旧 AI 译文",
+      translateEngine: "old-engine",
+      message: "old error",
+      sameLangTo: "zh-CN",
+    };
+    const cache = provider.captionCache.get(provider.id) || {};
+    provider.captionCache.set(provider.id, {
+      ...cache,
+      lines: [translatedLine],
+      builtinLines: [translatedLine],
+    });
+    provider.pretransFailedAt = Date.now();
+    provider.baselineFailedAt = Date.now();
+    provider.tokenizeFailedAt = Date.now();
+    let reloads = 0;
+    const onReload = () => {
+      reloads += 1;
+    };
+    provider.event.on("caption:reload", onReload);
+    provider.resetForLanguageChange();
+    provider.event.off("caption:reload", onReload);
+    const resetLine = provider.lines[0];
+    return {
+      generationAdvanced:
+        provider.translationGeneration === beforeGeneration + 1,
+      sourceRestored: resetLine?.text === "raw source",
+      translationCleared:
+        !resetLine?.translation &&
+        !resetLine?.AITranslation &&
+        !resetLine?.translateEngine &&
+        !resetLine?.message &&
+        !resetLine?.sameLangTo,
+      failuresCleared:
+        provider.pretransFailedAt === 0 &&
+        provider.baselineFailedAt === 0 &&
+        provider.tokenizeFailedAt === 0,
+      reloads,
+    };
+  });
+  if (
+    !languageReset.generationAdvanced ||
+    !languageReset.sourceRestored ||
+    !languageReset.translationCleared ||
+    !languageReset.failuresCleared ||
+    languageReset.reloads !== 0
+  ) {
+    throw new Error(
+      `Caption language reset failed: ${JSON.stringify(languageReset)}`,
+    );
+  }
 
   const seekScheduler = await video.evaluate(() => {
     const provider = window.captionProvider;
@@ -634,12 +919,27 @@ try {
     throw new Error(`Backward seek sanity failed: ${JSON.stringify(backwardSeekTest)}`);
   }
 
-  const bilingualDownloadTest = await video.evaluate(() => {
+  const bilingualDownloadTest = await video.evaluate(async () => {
     const provider = window.captionProvider;
-    // Set 2 lines, 1 translated, 1 untranslated
+    // Set 2 lines, 1 translated, 1 untranslated.
     const twoLines = [
-      { idx: 1, start: 0, end: 2000, text: "Hello", AITranslation: "你好" },
-      { idx: 2, start: 2000, end: 4000, text: "World", AITranslation: undefined, translation: undefined },
+      {
+        idx: 1,
+        start: 0,
+        end: 2000,
+        text: "AI repaired Hello",
+        originalText: "Raw Hello",
+        AITranslation: "你好",
+      },
+      {
+        idx: 2,
+        start: 2000,
+        end: 4000,
+        text: "AI repaired World",
+        originalText: "Raw World",
+        AITranslation: undefined,
+        translation: undefined,
+      },
     ];
     const cache = provider.captionCache.get(provider.id) || {};
     provider.captionCache.set(provider.id, { ...cache, lines: twoLines, builtinLines: twoLines });
@@ -652,26 +952,40 @@ try {
       incompleteBlocked = true;
     }
 
-    // Now complete the second line
-    const completedLines = [
-      { idx: 1, start: 0, end: 2000, text: "Hello", AITranslation: "你好" },
-      { idx: 2, start: 2000, end: 4000, text: "World", AITranslation: "世界" },
-    ];
+    // Now complete the second line and capture the generated SRT.
+    const completedLines = twoLines.map((line, index) => ({
+      ...line,
+      AITranslation: index === 0 ? "你好" : "世界",
+    }));
     provider.captionCache.set(provider.id, { ...cache, lines: completedLines, builtinLines: completedLines });
     const statusComplete = provider.getTranslationStatus();
+    const originalCreateObjectURL = URL.createObjectURL.bind(URL);
+    let downloadedBlob;
+    URL.createObjectURL = (blob) => {
+      downloadedBlob = blob;
+      return originalCreateObjectURL(blob);
+    };
     let completeAllowed = false;
     try {
       provider.downloadBilingualSrt("test");
       completeAllowed = true;
     } catch (e) {
       completeAllowed = false;
+    } finally {
+      URL.createObjectURL = originalCreateObjectURL;
     }
+    const downloadedText = downloadedBlob ? await downloadedBlob.text() : "";
 
     return {
       incompleteStatus: statusIncomplete,
       incompleteBlocked,
       completeStatus: statusComplete,
       completeAllowed,
+      exportedRepairedSource:
+        downloadedText.includes("AI repaired Hello") &&
+        downloadedText.includes("AI repaired World"),
+      exportedRawSource:
+        downloadedText.includes("Raw Hello") || downloadedText.includes("Raw World"),
     };
   });
 
@@ -679,7 +993,9 @@ try {
     !bilingualDownloadTest.incompleteBlocked ||
     bilingualDownloadTest.incompleteStatus.isAllDone ||
     !bilingualDownloadTest.completeAllowed ||
-    !bilingualDownloadTest.completeStatus.isAllDone
+    !bilingualDownloadTest.completeStatus.isAllDone ||
+    !bilingualDownloadTest.exportedRepairedSource ||
+    bilingualDownloadTest.exportedRawSource
   ) {
     throw new Error(`Bilingual download gating test failed: ${JSON.stringify(bilingualDownloadTest)}`);
   }
