@@ -896,6 +896,50 @@ function patchExtensionClientEmit(ast, area) {
   return patched;
 }
 
+function patchVideoNullChildNodes(ast) {
+  let patched = 0;
+  traverse(ast, {
+    CallExpression(callPath) {
+      if (
+        !t.isMemberExpression(callPath.node.callee) ||
+        !t.isIdentifier(callPath.node.callee.object, { name: "Array" }) ||
+        !t.isIdentifier(callPath.node.callee.property, { name: "from" }) ||
+        callPath.node.arguments.length !== 1
+      )
+        return;
+      const childNodes = callPath.node.arguments[0];
+      if (
+        !t.isMemberExpression(childNodes) ||
+        !t.isIdentifier(childNodes.object) ||
+        !t.isIdentifier(childNodes.property, { name: "childNodes" })
+      )
+        return;
+      const owner = t.cloneNode(childNodes.object);
+      const safeChildNodes = t.logicalExpression(
+        "||",
+        t.logicalExpression(
+          "&&",
+          t.cloneNode(owner),
+          t.memberExpression(t.cloneNode(owner), t.identifier("childNodes")),
+        ),
+        t.arrayExpression([]),
+      );
+      t.addComment(
+        safeChildNodes,
+        "leading",
+        " LexiHalo: tolerate detached or malformed timed-text nodes. ",
+      );
+      callPath.node.arguments[0] = safeChildNodes;
+      patched += 1;
+    },
+  });
+  if (patched !== 1) {
+    throw new Error(
+      `video: expected one nullable childNodes traversal, patched ${patched}`,
+    );
+  }
+}
+
 function patchChineseSubtitleVariants(ast) {
   let patched = 0;
   let lookupPatched = 0;
@@ -1435,6 +1479,7 @@ async function buildMain(name, config) {
   }
   if (name === "video") {
     patchExtensionClientEmit(ast, "video");
+    patchVideoNullChildNodes(ast);
     patchChineseSubtitleVariants(ast);
     patchYouTubeCaptionStartup(ast);
     sourceComponents = installUiSourceFactories(ast, {

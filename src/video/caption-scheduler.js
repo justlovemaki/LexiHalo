@@ -4,6 +4,110 @@
   const provider = window.captionProvider;
   if (!provider) return;
 
+  const requestSubtitleService = (type, payload = {}, timeoutMs = 720000) =>
+    new Promise((resolve, reject) => {
+      const requestId = crypto.randomUUID();
+      let settled = false;
+      const finish = (response, error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        window.removeEventListener("message", onMessage);
+        error
+          ? reject(error)
+          : response?.ok
+            ? resolve(response.data)
+            : reject(new Error(response?.error || "音频识别请求失败"));
+      };
+      const onMessage = (event) => {
+        if (
+          event.source === window &&
+          event.data?.eventName === "lexihalo:subtitle-ai-response" &&
+          event.data?.requestId === requestId
+        ) {
+          finish(event.data.response);
+        }
+      };
+      const timeout = window.setTimeout(
+        () => finish(null, new Error("音频识别请求超时")),
+        timeoutMs,
+      );
+      window.addEventListener("message", onMessage);
+      window.postMessage(
+        {
+          eventName: "lexihalo:subtitle-ai-request",
+          requestId,
+          type,
+          payload,
+        },
+        "*",
+      );
+    });
+
+  const localTranscriptions = new Map();
+  const originalCaptionLoad = provider.load.bind(provider);
+  provider.installTranscription = (segments, language = "auto") => {
+    if (!Array.isArray(segments) || !segments.length) {
+      throw new Error("音频识别没有返回可用字幕");
+    }
+    const videoId = provider.id;
+    const vid = window.metacontext?.vid || videoId;
+    const lines = segments
+      .map((segment, index) => {
+        const text = String(segment?.text || "")
+          .replace(/\s+/g, " ")
+          .trim();
+        const start = Math.max(0, Number(segment?.start) || 0);
+        const end = Math.max(start + 1, Number(segment?.end) || start + 1);
+        return text
+          ? {
+              text,
+              originalText: text,
+              start,
+              end,
+              idx: index,
+              tokens: [],
+              sid: `${vid}:${start}:${end}`,
+              vid,
+            }
+          : null;
+      })
+      .filter(Boolean);
+    if (!lines.length) throw new Error("音频识别没有返回可用字幕");
+    localTranscriptions.set(videoId, { lines, language });
+    const previous = provider.captionCache?.get?.(videoId) || {};
+    provider.captionCache?.set?.(videoId, {
+      ...previous,
+      whisperLines: lines,
+    });
+    provider.endableWhisper = true;
+    provider.strategy = "preload";
+    provider.lastPretransCurrent = -1;
+    provider.seekFirstBatch = true;
+    provider.pretransFailedAt = 0;
+    provider.event?.emit?.("changed", {
+      current: provider.current,
+      forceUpdate: true,
+      transcription: true,
+    });
+    return lines;
+  };
+  provider.load = async (...args) => {
+    const local = localTranscriptions.get(provider.id);
+    if (provider.endableWhisper && local?.lines?.length) {
+      const previous = provider.captionCache?.get?.(provider.id) || {};
+      provider.captionCache?.set?.(provider.id, {
+        ...previous,
+        whisperLines: local.lines,
+      });
+      provider.strategy = "preload";
+      return { lines: local.lines, languageCode: local.language };
+    }
+    return originalCaptionLoad(...args);
+  };
+  globalThis.lexihaloTranscribeAudio = (payload) =>
+    requestSubtitleService("lexihalo:subtitle-ai:transcribe", payload);
+
   let youtubeNativeCaptionWasEnabled = false;
   let youtubeNativeCaptionSuppressionActive = false;
   let youtubeNativeCaptionObserver = null;

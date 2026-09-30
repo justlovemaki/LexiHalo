@@ -4,9 +4,12 @@
   const ENGINE_KEY = "trancy_byok_engines";
   const SETTING_KEY = "lexihalo_subtitle_ai";
   const CACHE_KEY = "lexihalo_subtitle_ai_cache_v1";
+  const TRANSCRIPTION_CACHE_KEY = "lexihalo_audio_transcription_cache_v1";
   const DIAGNOSTICS_KEY = "lexihalo_subtitle_ai_diagnostics_v1";
   const DEFAULTS = { segmentation: false, repair: false, engineId: "" };
   const MAX_CACHE_ENTRIES = 160;
+  const MAX_TRANSCRIPTION_CACHE_ENTRIES = 20;
+  const MAX_AUDIO_BYTES = 24 * 1024 * 1024;
   const MAX_DIAGNOSTIC_ENTRIES = 40;
   const AI_PROVIDER_IDS = new Set([
     "OpenAI",
@@ -64,8 +67,19 @@
     engineId: typeof value?.engineId === "string" ? value.engineId : "",
   });
 
+  const usesLocalTranscriptionCookie = (engine) =>
+    /^http:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?\//i.test(
+      String(engine?.transcriptionEndpoint || ""),
+    );
+
   const isAiEngine = (engine) => {
-    if (!engine || !engine._id || !engine.key || !engine.model) return false;
+    if (
+      !engine ||
+      !engine._id ||
+      (!engine.key && !usesLocalTranscriptionCookie(engine)) ||
+      !engine.model
+    )
+      return false;
     if (AI_PROVIDER_IDS.has(engine.providerId)) return true;
     return ["OpenAI", "DeepSeek", "Google", "Anthropic", "AI"].includes(
       engine.provider,
@@ -491,6 +505,516 @@
     });
   };
 
+  const getTranscriptionCached = async (key) => {
+    const stored = await chrome.storage.local.get(TRANSCRIPTION_CACHE_KEY);
+    const entry = stored[TRANSCRIPTION_CACHE_KEY]?.[key];
+    return Array.isArray(entry?.segments) ? entry : null;
+  };
+
+  const setTranscriptionCached = async (key, value) => {
+    const stored = await chrome.storage.local.get(TRANSCRIPTION_CACHE_KEY);
+    const cache =
+      stored[TRANSCRIPTION_CACHE_KEY] &&
+      typeof stored[TRANSCRIPTION_CACHE_KEY] === "object"
+        ? stored[TRANSCRIPTION_CACHE_KEY]
+        : {};
+    cache[key] = { ...value, at: Date.now() };
+    const entries = Object.entries(cache).sort(
+      (left, right) => (right[1]?.at || 0) - (left[1]?.at || 0),
+    );
+    await chrome.storage.local.set({
+      [TRANSCRIPTION_CACHE_KEY]: Object.fromEntries(
+        entries.slice(0, MAX_TRANSCRIPTION_CACHE_ENTRIES),
+      ),
+    });
+  };
+
+  const isTranscriptionEngine = (engine) =>
+    Boolean(
+      (engine?.key || usesLocalTranscriptionCookie(engine)) &&
+        engine?.model &&
+        ["OpenAI", "Custom"].includes(engine.providerId || "") &&
+        (engine.provider === "OpenAI" || engine.providerId === "OpenAI"),
+    );
+
+  const transcriptionEndpointFor = (engine) => {
+    if (engine?.transcriptionEndpoint) return engine.transcriptionEndpoint;
+    let endpoint;
+    try {
+      endpoint = new URL(engine?.endpoint || "");
+    } catch {
+      throw new Error("音频识别 Endpoint 无效，请在 BYOK 页面检查配置");
+    }
+    endpoint.pathname = endpoint.pathname
+      .replace(/\/(?:chat\/completions|responses)\/?$/i, "/audio/transcriptions")
+      .replace(/\/$/, "");
+    if (!/\/audio\/transcriptions$/i.test(endpoint.pathname)) {
+      endpoint.pathname = `${endpoint.pathname.replace(/\/$/, "")}/audio/transcriptions`;
+    }
+    endpoint.search = "";
+    endpoint.hash = "";
+    return endpoint.toString();
+  };
+
+  const normalizeTranscriptionLanguage = (value) => {
+    const language = String(value || "")
+      .trim()
+      .toLowerCase()
+      .split(/[-_]/)[0];
+    return /^[a-z]{2,3}$/.test(language) && language !== "und"
+      ? language
+      : "";
+  };
+
+  const audioFilename = (mimeType) => {
+    const type = String(mimeType || "").toLowerCase();
+    if (type.includes("video/mp4")) return "video-audio.mp4";
+    if (type.includes("mp4") || type.includes("m4a")) return "video-audio.m4a";
+    if (type.includes("mpeg") || type.includes("mp3")) return "video-audio.mp3";
+    if (type.includes("ogg")) return "video-audio.ogg";
+    if (type.includes("wav")) return "video-audio.wav";
+    return "video-audio.webm";
+  };
+
+  const parseTranscriptionTime = (value) => {
+    if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
+    const text = String(value ?? "").trim();
+    if (!text) return NaN;
+    if (/^\d+(?:\.\d+)?$/.test(text)) return Number(text);
+    const parts = text.replace(",", ".").split(":").map(Number);
+    if (parts.some((part) => !Number.isFinite(part))) return NaN;
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return NaN;
+  };
+
+  const readRawTimedItems = (items, textKeys) =>
+    items
+      .map((item) => {
+        const timestamp = Array.isArray(item?.timestamp)
+          ? item.timestamp
+          : Array.isArray(item?.timestamps)
+            ? item.timestamps
+            : [];
+        const milliseconds = item?.start_ms != null || item?.end_ms != null;
+        const start = parseTranscriptionTime(
+          item?.start_ms ??
+            item?.start ??
+            item?.start_time ??
+            item?.begin ??
+            timestamp[0],
+        );
+        const end = parseTranscriptionTime(
+          item?.end_ms ??
+            item?.end ??
+            item?.end_time ??
+            item?.finish ??
+            timestamp[1],
+        );
+        const text = String(
+          textKeys.map((key) => item?.[key]).find((value) => value != null) ??
+            "",
+        );
+        return Number.isFinite(start) && Number.isFinite(end) && text.trim()
+          ? { start, end, text, milliseconds }
+          : null;
+      })
+      .filter(Boolean);
+
+  const timedItemsUseMilliseconds = (
+    items,
+    declaredDuration,
+    expectedDuration,
+  ) => {
+    const regular = items.filter((item) => !item.milliseconds);
+    if (!regular.length) return false;
+    const maxEnd = Math.max(...regular.map((item) => item.end));
+    const durations = regular
+      .map((item) => item.end - item.start)
+      .filter((duration) => duration > 0)
+      .sort((left, right) => left - right);
+    const median = durations[Math.floor(durations.length / 2)] || 0;
+    const declared = parseTranscriptionTime(declaredDuration);
+    if (Number.isFinite(declared) && declared > 0) {
+      const ratio = maxEnd / declared;
+      if (ratio > 100) return true;
+      if (ratio >= 0.25 && ratio <= 4) {
+        let expected = Number(expectedDuration);
+        if (Number.isFinite(expected) && expected > 86400) expected /= 1000;
+        if (Number.isFinite(expected) && expected > 0 && maxEnd / expected > 100) {
+          return true;
+        }
+        return regular.length > 1 && median > 120;
+      }
+    }
+    return regular.length > 1 && median > 120;
+  };
+
+  const normalizeTimedItems = (
+    items,
+    declaredDuration,
+    expectedDuration,
+  ) => {
+    const inferredMilliseconds = timedItemsUseMilliseconds(
+      items,
+      declaredDuration,
+      expectedDuration,
+    );
+    return items
+      .map((item) => {
+        const scale = item.milliseconds || inferredMilliseconds ? 1 : 1000;
+        const start = Math.max(0, Math.round(item.start * scale));
+        const end = Math.max(start + 1, Math.round(item.end * scale));
+        const text = item.text.replace(/\s+/g, " ").trim();
+        return text ? { start, end, text } : null;
+      })
+      .filter(Boolean)
+      .sort((left, right) => left.start - right.start || left.end - right.end);
+  };
+
+  const joinTranscriptionWords = (words) => {
+    let text = "";
+    for (const word of words) {
+      const token = String(word.text || "");
+      if (!token) continue;
+      const needsSpace =
+        text &&
+        !/^\s/u.test(token) &&
+        !/^[,.;:!?，。；：！？、'’]/u.test(token) &&
+        /[A-Za-z0-9]$/u.test(text) &&
+        /^[A-Za-z0-9]/u.test(token);
+      text += `${needsSpace ? " " : ""}${token}`;
+    }
+    return text.replace(/\s+/g, " ").trim();
+  };
+
+  const groupTimedWords = (words) => {
+    const groups = [];
+    let current = [];
+    const flush = () => {
+      if (!current.length) return;
+      groups.push({
+        start: current[0].start,
+        end: current[current.length - 1].end,
+        text: joinTranscriptionWords(current),
+      });
+      current = [];
+    };
+    for (const word of words) {
+      current.push(word);
+      const text = joinTranscriptionWords(current);
+      const duration = word.end - current[0].start;
+      if (
+        duration >= 9000 ||
+        text.length >= 72 ||
+        (duration >= 1800 && /[.!?。！？]$/u.test(text))
+      ) {
+        flush();
+      }
+    }
+    flush();
+    return groups.filter((group) => group.text);
+  };
+
+  const normalizeTranscriptionSegments = (payload, expectedDuration) => {
+    const root =
+      [payload, payload?.data, payload?.result].find(
+        (value) =>
+          value &&
+          typeof value === "object" &&
+          [
+            value.segments,
+            value.chunks,
+            value.utterances,
+            value.words,
+          ].some(Array.isArray),
+      ) || payload;
+    const rawSegments =
+      [root?.segments, root?.chunks, root?.utterances].find(Array.isArray) || [];
+    const rawWords = Array.isArray(root?.words)
+      ? root.words
+      : rawSegments.flatMap((segment) =>
+          Array.isArray(segment?.words) ? segment.words : [],
+        );
+    let segments = normalizeTimedItems(
+      readRawTimedItems(rawSegments, ["text", "transcript", "content"]),
+      root?.duration,
+      expectedDuration,
+    );
+    const words = normalizeTimedItems(
+      readRawTimedItems(rawWords, ["word", "text", "token"]),
+      root?.duration,
+      expectedDuration,
+    );
+    if (
+      words.length > 1 &&
+      (segments.length <= 1 ||
+        (segments[0].end - segments[0].start > 30000 &&
+          segments[0].text.length > 120))
+    ) {
+      segments = groupTimedWords(words);
+    }
+    if (
+      segments.length === 1 &&
+      segments[0].end - segments[0].start > 30000 &&
+      segments[0].text.length > 120
+    ) {
+      throw new Error(
+        "音频识别接口只返回了一个全文分段，且没有 word 时间戳，无法生成准确字幕时间轴。请让接口返回多个 segments 或 words。",
+      );
+    }
+    segments = segments.map((segment, index, all) => ({
+      ...segment,
+      index,
+      end:
+        index + 1 < all.length
+          ? Math.min(
+              segment.end,
+              Math.max(segment.start + 1, all[index + 1].start),
+            )
+          : segment.end,
+    }));
+    if (!segments.length) {
+      throw new Error(
+        "音频识别接口未返回分段时间戳。需要 verbose_json 的 segments/chunks/utterances/words，并包含 start、end 和文本。",
+      );
+    }
+    return segments;
+  };
+
+  const fetchWithTimeout = async (url, options, timeoutMs) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error("请求超时，请稍后重试");
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
+  const readResponseError = async (response) => {
+    const text = await response.text().catch(() => "");
+    try {
+      const payload = JSON.parse(text);
+      return String(
+        payload?.error?.message || payload?.message || text || response.statusText,
+      ).slice(0, 800);
+    } catch {
+      return String(text || response.statusText || `HTTP ${response.status}`).slice(
+        0,
+        800,
+      );
+    }
+  };
+
+  const transcribeAudio = async (message, sender) => {
+    let senderUrl;
+    try {
+      senderUrl = new URL(String(sender?.url || ""));
+    } catch {
+      throw new Error("无法确认音频转写请求来源");
+    }
+    const supportedPage =
+      senderUrl.protocol === "chrome-extension:" ||
+      /(^|\.)(youtube\.com|youtube-nocookie\.com|netflix\.com|coursera\.org|udemy\.com|udemy\.cn|ted\.com|hbomax\.com|max\.com|disneyplus\.com|edx\.org|primevideo\.com|deeplearning\.ai|bilibili\.com|vimeo\.com)$/i.test(
+        senderUrl.hostname,
+      );
+    if (!supportedPage) throw new Error("当前网站不支持视频音频转写");
+
+    let sourceUrl;
+    try {
+      sourceUrl = new URL(String(message.audioUrl || ""));
+    } catch {
+      throw new Error("未找到可上传的视频音频地址");
+    }
+    if (sourceUrl.protocol !== "https:" && sourceUrl.protocol !== "http:") {
+      throw new Error("音频地址必须使用 HTTP 或 HTTPS");
+    }
+
+    const { engines } = await getConfig();
+    const requested = engines.find((engine) => engine._id === message.engineId);
+    const engine = isTranscriptionEngine(requested)
+      ? requested
+      : engines.find(isTranscriptionEngine);
+    if (!engine) {
+      throw new Error(
+        "请先在 BYOK 页面配置 OpenAI（或 OpenAI 兼容）引擎及音频识别模型",
+      );
+    }
+
+    const model = String(engine.transcriptionModel || "whisper-1").trim();
+    const endpoint = transcriptionEndpointFor(engine);
+    const endpointUrl = new URL(endpoint);
+    const sourceHost = sourceUrl.hostname.toLowerCase();
+    const endpointHost = endpointUrl.hostname.toLowerCase();
+    const localHosts = new Set(["127.0.0.1", "localhost", "::1"]);
+    const isLocalFixture =
+      localHosts.has(sourceHost) && sourceHost === endpointHost;
+    const isPrivateNetwork =
+      localHosts.has(sourceHost) ||
+      /^10\./.test(sourceHost) ||
+      /^192\.168\./.test(sourceHost) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(sourceHost) ||
+      sourceHost.endsWith(".local");
+    if (sourceUrl.protocol !== "https:" && !isLocalFixture) {
+      throw new Error("远程音频地址必须使用 HTTPS");
+    }
+    if (isPrivateNetwork && !isLocalFixture) {
+      throw new Error("不允许从本地或私有网络读取音频");
+    }
+    const isLocalEndpoint = localHosts.has(endpointHost);
+    const language = String(
+      engine.transcriptionLanguage ||
+        normalizeTranscriptionLanguage(message.language) ||
+        (isLocalEndpoint ? "auto" : ""),
+    )
+      .trim()
+      .slice(0, 40);
+    const prompt = String(
+      engine.transcriptionPrompt ||
+        "Accurate transcription with punctuation and proper nouns.",
+    )
+      .trim()
+      .slice(0, 500);
+    const videoId = String(message.videoId || sourceUrl.href).slice(0, 500);
+    const cacheKey = await digest(
+      JSON.stringify({
+        version: 4,
+        videoId,
+        engine: engine._id,
+        model,
+        endpoint,
+        language,
+        prompt,
+      }),
+    );
+    const cached = await getTranscriptionCached(cacheKey);
+    if (cached) {
+      recordDiagnostic({
+        stage: "audio-transcription-cache",
+        status: "hit",
+        engine: diagnosticEngine({ ...engine, model, endpoint }),
+        segmentCount: cached.segments.length,
+      });
+      return { ...cached, cached: true };
+    }
+
+    const startedAt = performance.now();
+    let audioBlob;
+    try {
+      const audioResponse = await fetchWithTimeout(
+        sourceUrl.href,
+        { method: "GET", cache: "no-store", credentials: "omit" },
+        120000,
+      );
+      if (!audioResponse.ok) {
+        throw new Error(`获取视频音频失败（HTTP ${audioResponse.status}）`);
+      }
+      const declaredSize = Number(audioResponse.headers.get("content-length") || 0);
+      if (declaredSize > MAX_AUDIO_BYTES) {
+        throw new Error(
+          `音频文件 ${(declaredSize / 1024 / 1024).toFixed(1)} MB，超过 24 MB 上传限制`,
+        );
+      }
+      audioBlob = await audioResponse.blob();
+      if (!audioBlob.size) throw new Error("获取到的音频文件为空");
+      if (audioBlob.size > MAX_AUDIO_BYTES) {
+        throw new Error(
+          `音频文件 ${(audioBlob.size / 1024 / 1024).toFixed(1)} MB，超过 24 MB 上传限制`,
+        );
+      }
+
+      const form = new FormData();
+      const mimeType =
+        String(message.mimeType || "").split(";")[0] ||
+        audioBlob.type ||
+        "audio/webm";
+      form.append(
+        "file",
+        new Blob([audioBlob], { type: mimeType }),
+        audioFilename(mimeType),
+      );
+      form.append("model", model);
+      if (language) form.append("language", language);
+      form.append("prompt", prompt);
+      form.append("response_format", "verbose_json");
+      form.append("temperature", "0");
+
+      const customHeaders =
+        engine.requestHeaders && typeof engine.requestHeaders === "object"
+          ? engine.requestHeaders
+          : {};
+      const headers = {
+        Accept: "*/*",
+        "Accept-Language": navigator.language || "zh-CN",
+      };
+      for (const [name, value] of Object.entries(customHeaders)) {
+        if (name.toLowerCase() !== "content-type") headers[name] = String(value);
+      }
+      const useCookieAuthentication = isLocalEndpoint;
+      if (
+        engine.key &&
+        !useCookieAuthentication &&
+        !Object.keys(headers).some(
+          (name) => name.toLowerCase() === "authorization",
+        )
+      ) {
+        headers.Authorization = `Bearer ${engine.key}`;
+      }
+      const transcriptionResponse = await fetchWithTimeout(
+        endpoint,
+        {
+          method: "POST",
+          headers,
+          body: form,
+          credentials: useCookieAuthentication ? "include" : "omit",
+        },
+        10 * 60 * 1000,
+      );
+      if (!transcriptionResponse.ok) {
+        throw new Error(
+          `OpenAI 音频识别失败（HTTP ${transcriptionResponse.status}）：${await readResponseError(transcriptionResponse)}`,
+        );
+      }
+      const payload = await transcriptionResponse.json();
+      const segments = normalizeTranscriptionSegments(
+        payload,
+        Number(message.duration) || 0,
+      );
+      const result = {
+        segments,
+        language: String(payload?.language || language || "auto"),
+        duration: Number(payload?.duration) || Number(message.duration) || 0,
+        engineId: engine._id,
+        model,
+        audioBytes: audioBlob.size,
+      };
+      await setTranscriptionCached(cacheKey, result);
+      recordDiagnostic({
+        stage: "audio-transcription",
+        status: "ok",
+        engine: diagnosticEngine({ ...engine, model, endpoint }),
+        audioBytes: audioBlob.size,
+        segmentCount: segments.length,
+        durationMs: Math.round(performance.now() - startedAt),
+      });
+      return { ...result, cached: false };
+    } catch (error) {
+      recordDiagnostic({
+        stage: "audio-transcription",
+        status: "failed",
+        engine: diagnosticEngine({ ...engine, model, endpoint }),
+        audioBytes: audioBlob?.size,
+        durationMs: Math.round(performance.now() - startedAt),
+        error: error?.message || String(error),
+      });
+      throw error;
+    }
+  };
+
   const failedSubtitleResult = (text, message) => ({
     message: message || "failed",
     translation: "",
@@ -880,7 +1404,7 @@
     let translationCacheCleared = false;
 
     if (target === "all" || target === "ai-subtitle" || target === "subtitle") {
-      await chrome.storage.local.remove(CACHE_KEY);
+      await chrome.storage.local.remove([CACHE_KEY, TRANSCRIPTION_CACHE_KEY]);
       aiSubtitleCacheCleared = true;
     }
     if (target === "all") {
@@ -989,7 +1513,7 @@
     return { segments, cached: false };
   };
 
-  const handleMessage = async (message) => {
+  const handleMessage = async (message, sender) => {
     switch (message?.type) {
       case "lexihalo:subtitle-ai:get-config": {
         const { settings, engines } = await getConfig();
@@ -1032,6 +1556,8 @@
         return { cleared: true };
       case "lexihalo:subtitle-ai:process":
         return processSubtitles(message);
+      case "lexihalo:subtitle-ai:transcribe":
+        return transcribeAudio(message, sender);
       default:
         throw new Error("未知的 AI 字幕请求");
     }
@@ -1047,7 +1573,7 @@
         !message.type.startsWith("lexihalo:subtitle-ai:")
       )
         return;
-      handleMessage(message)
+      handleMessage(message, port.sender)
         .then(
           (data) =>
             port.postMessage({ requestId, response: { ok: true, data } }),

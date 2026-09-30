@@ -11,6 +11,9 @@
       name: "OpenAI",
       model: "gpt-4o-mini",
       endpoint: "https://api.openai.com/v1/chat/completions",
+      transcriptionModel: "whisper-1",
+      transcriptionEndpoint: "https://api.openai.com/v1/audio/transcriptions",
+      supportsTranscription: true,
     },
     OpenRouter: {
       runtimeProvider: "OpenAI",
@@ -55,6 +58,9 @@
       name: "Custom AI",
       model: "",
       endpoint: "",
+      transcriptionModel: "whisper-1",
+      transcriptionEndpoint: "",
+      supportsTranscription: true,
     },
   };
 
@@ -67,6 +73,15 @@
   const keyInput = $("key");
   const regionInput = $("region");
   const regionLabel = $("region-label");
+  const transcriptionModelInput = $("transcription-model");
+  const transcriptionEndpointInput = $("transcription-endpoint");
+  const transcriptionModelLabel = $("transcription-model-label");
+  const transcriptionEndpointLabel = $("transcription-endpoint-label");
+  const transcriptionLanguageInput = $("transcription-language");
+  const transcriptionPromptInput = $("transcription-prompt");
+  const transcriptionLanguageLabel = $("transcription-language-label");
+  const transcriptionPromptLabel = $("transcription-prompt-label");
+  const transcriptionNote = $("transcription-note");
   const idInput = $("engine-id");
   const list = $("engine-list");
   const empty = $("empty");
@@ -162,6 +177,35 @@
     if (force || !endpointInput.value) endpointInput.value = preset.endpoint;
     regionLabel.hidden = !preset.supportsRegion;
     if (!preset.supportsRegion) regionInput.value = "";
+    const supportsTranscription = preset.supportsTranscription === true;
+    transcriptionModelInput.disabled = !supportsTranscription;
+    transcriptionEndpointInput.disabled = !supportsTranscription;
+    transcriptionLanguageInput.disabled = !supportsTranscription;
+    transcriptionPromptInput.disabled = !supportsTranscription;
+    for (const label of [
+      transcriptionModelLabel,
+      transcriptionEndpointLabel,
+      transcriptionLanguageLabel,
+      transcriptionPromptLabel,
+    ]) {
+      label.classList.toggle("field-disabled", !supportsTranscription);
+    }
+    transcriptionNote.textContent = supportsTranscription
+      ? "用于无字幕视频。LexiHalo 会获取视频音频并以 multipart/form-data 直接上传到该接口；建议使用 whisper-1 以获得分段时间戳。"
+      : "当前服务商不支持此配置。请选择 OpenAI 或 OpenAI 兼容接口后填写。";
+    if (supportsTranscription) {
+      if (force || !transcriptionModelInput.value) {
+        transcriptionModelInput.value = preset.transcriptionModel || "whisper-1";
+      }
+      if (force || !transcriptionEndpointInput.value) {
+        transcriptionEndpointInput.value = preset.transcriptionEndpoint || "";
+      }
+    } else {
+      transcriptionModelInput.value = "";
+      transcriptionEndpointInput.value = "";
+      transcriptionLanguageInput.value = "";
+      transcriptionPromptInput.value = "";
+    }
   };
 
   const createButton = (text, className, handler) => {
@@ -187,7 +231,10 @@
       title.textContent = engine.name;
       const meta = document.createElement("div");
       meta.className = "engine-meta";
-      meta.textContent = `${engine.providerLabel || engine.provider} · ${engine.model} · ${maskKey(engine.key)}${engine.region ? ` · ${engine.region}` : ""} · ${engine.endpoint}`;
+      const transcriptionMeta = engine.transcriptionModel
+        ? ` · 音频识别 ${engine.transcriptionModel}`
+        : "";
+      meta.textContent = `${engine.providerLabel || engine.provider} · ${engine.model}${transcriptionMeta} · ${maskKey(engine.key)}${engine.region ? ` · ${engine.region}` : ""} · ${engine.endpoint}`;
       info.append(title, meta);
 
       const actions = document.createElement("div");
@@ -212,7 +259,11 @@
     endpointInput.value = engine.endpoint;
     keyInput.value = engine.key;
     regionInput.value = engine.region || "";
-    regionLabel.hidden = !presets[provider.value]?.supportsRegion;
+    transcriptionModelInput.value = engine.transcriptionModel || "";
+    transcriptionEndpointInput.value = engine.transcriptionEndpoint || "";
+    transcriptionLanguageInput.value = engine.transcriptionLanguage || "";
+    transcriptionPromptInput.value = engine.transcriptionPrompt || "";
+    applyPreset(false);
     $("form-title").textContent = "编辑翻译引擎";
     cancelEdit.hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -253,6 +304,16 @@
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const preset = presets[provider.value];
+    const key = keyInput.value.trim();
+    const transcriptionEndpoint = transcriptionEndpointInput.value.trim();
+    const usesLocalCookieAuth = /^http:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?\//i.test(
+      transcriptionEndpoint,
+    );
+    if (!key && !usesLocalCookieAuth) {
+      status.textContent = "请填写 API Key；只有本地 Cookie 认证的音频接口可以留空";
+      keyInput.focus();
+      return;
+    }
     const id = idInput.value || `byok-${crypto.randomUUID()}`;
     const engine = {
       _id: id,
@@ -262,8 +323,12 @@
       providerLabel: preset.name,
       model: modelInput.value.trim(),
       endpoint: endpointInput.value.trim(),
-      key: keyInput.value.trim(),
+      key,
       region: regionInput.value.trim(),
+      transcriptionModel: transcriptionModelInput.value.trim(),
+      transcriptionEndpoint,
+      transcriptionLanguage: transcriptionLanguageInput.value.trim(),
+      transcriptionPrompt: transcriptionPromptInput.value.trim(),
       type: "user",
       role: 2,
       enabled: true,

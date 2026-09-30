@@ -69,11 +69,10 @@
               />
             </label>
             <label class="wide"
-              >API Key
+              >API Key（本地 Cookie 认证的音频接口可留空）
               <input
                 id="key"
                 type="password"
-                required
                 autocomplete="off"
                 placeholder="仅保存在本机"
               />
@@ -86,6 +85,46 @@
                 placeholder="例如 eastasia；单服务 Translator 资源通常可留空"
               />
             </label>
+            <div class="wide field-heading">
+              <strong>无字幕视频 · OpenAI 音频识别</strong>
+              <span>先从视频音频生成带时间轴的原字幕</span>
+            </div>
+            <label id="transcription-model-label"
+              >音频识别模型（可选）
+              <input
+                id="transcription-model"
+                maxlength="120"
+                placeholder="例如：whisper-1"
+              />
+            </label>
+            <label id="transcription-endpoint-label"
+              >音频识别 Endpoint（可选）
+              <input
+                id="transcription-endpoint"
+                type="url"
+                placeholder="https://api.openai.com/v1/audio/transcriptions"
+              />
+            </label>
+            <label id="transcription-language-label"
+              >音频识别语言（可选）
+              <input
+                id="transcription-language"
+                maxlength="40"
+                placeholder="例如：zh、zh-CN 或 中文；留空自动检测"
+              />
+            </label>
+            <label id="transcription-prompt-label"
+              >音频识别提示词（可选）
+              <input
+                id="transcription-prompt"
+                maxlength="500"
+                placeholder="例如：专有名词、人物名称或内容主题"
+              />
+            </label>
+            <p id="transcription-note" class="wide field-note">
+              用于无字幕视频。LexiHalo 会获取视频音频并以 multipart/form-data
+              直接上传到该接口；建议使用 <code>whisper-1</code> 以获得分段时间戳。
+            </p>
           </div>
           <div class="actions">
             <button type="submit" class="primary">保存引擎</button>

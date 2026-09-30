@@ -9,7 +9,39 @@ const profile = path.join(root, ".pi", "readable-e2e-profile");
 fs.rmSync(profile, { recursive: true, force: true });
 const errors = [];
 const aiRequests = [];
+const transcriptionRequests = [];
+const transcriptionRequestHeaders = [];
 const server = http.createServer((request, response) => {
+  if (request.url?.startsWith("/audio-fixture")) {
+    response.writeHead(200, {
+      "content-type": "audio/webm",
+      "content-length": "16",
+    });
+    response.end(Buffer.from("fixture-audio-01"));
+    return;
+  }
+  if (request.url?.startsWith("/transcribe")) {
+    const chunks = [];
+    request.on("data", (chunk) => chunks.push(chunk));
+    request.on("end", () => {
+      const body = Buffer.concat(chunks).toString("latin1");
+      transcriptionRequests.push(body);
+      transcriptionRequestHeaders.push(request.headers);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          language: "en",
+          duration: 5,
+          text: "generated from audio second timed caption",
+          segments: [
+            { start: 0, end: 2500, text: "generated from audio" },
+            { start: 2500, end: 5000, text: "second timed caption" },
+          ],
+        }),
+      );
+    });
+    return;
+  }
   if (request.url?.startsWith("/ai")) {
     const chunks = [];
     request.on("data", (chunk) => chunks.push(chunk));
@@ -116,13 +148,24 @@ try {
   await byok.locator("#name").fill("E2E Engine");
   await byok.locator("#model").fill("e2e-model");
   await byok.locator("#endpoint").fill(`${localUrl}ai`);
+  await byok.locator("#transcription-model").fill("whisper-1");
+  await byok.locator("#transcription-endpoint").fill(`${localUrl}transcribe`);
+  await byok.locator("#transcription-language").fill("中文");
+  await byok.locator("#transcription-prompt").fill("E2E glossary");
   await byok.locator("#key").fill("e2e-key");
   await byok.locator('#engine-form button[type="submit"]').click();
   await byok.locator(".engine-name", { hasText: "E2E Engine" }).waitFor({ timeout: 10000 });
   let storedEngines = await byok.evaluate(async () =>
     (await chrome.storage.local.get("trancy_byok_engines")).trancy_byok_engines,
   );
-  if (storedEngines?.length !== 1 || storedEngines[0].key !== "e2e-key") {
+  if (
+    storedEngines?.length !== 1 ||
+    storedEngines[0].key !== "e2e-key" ||
+    storedEngines[0].transcriptionModel !== "whisper-1" ||
+    storedEngines[0].transcriptionEndpoint !== `${localUrl}transcribe` ||
+    storedEngines[0].transcriptionLanguage !== "中文" ||
+    storedEngines[0].transcriptionPrompt !== "E2E glossary"
+  ) {
     throw new Error("BYOK create/persist failed");
   }
   const engineId = storedEngines[0]._id;
@@ -362,6 +405,71 @@ try {
   );
   if (!Array.isArray(cacheConfig.engines) || cacheConfig.engines[0]?._id !== engineId)
     throw new Error("Subtitle cache/config port failed");
+
+  const transcribeAudio = () =>
+    byok.evaluate(
+      ({ engineId, audioUrl }) =>
+        new Promise((resolve, reject) => {
+          const port = chrome.runtime.connect({ name: "lexihalo-subtitle-ai" });
+          const requestId = crypto.randomUUID();
+          const timer = setTimeout(
+            () => reject(new Error("audio transcription timeout")),
+            10000,
+          );
+          port.onMessage.addListener((message) => {
+            if (message?.requestId !== requestId) return;
+            clearTimeout(timer);
+            port.disconnect();
+            message.response?.ok
+              ? resolve(message.response.data)
+              : reject(new Error(message.response?.error));
+          });
+          port.postMessage({
+            requestId,
+            type: "lexihalo:subtitle-ai:transcribe",
+            engineId,
+            audioUrl,
+            mimeType: "audio/webm",
+            videoId: "e2e-audio-video",
+            language: "en-US",
+            duration: 2500,
+          });
+        }),
+      { engineId, audioUrl: `${localUrl}audio-fixture` },
+    );
+  const transcription = await transcribeAudio();
+  if (
+    transcription?.cached !== false ||
+    transcription?.segments?.length !== 2 ||
+    transcription?.segments?.[0]?.text !== "generated from audio" ||
+    transcription?.segments?.[0]?.end !== 2500 ||
+    transcription?.segments?.[1]?.start !== 2500 ||
+    transcription?.segments?.[1]?.end !== 5000
+  ) {
+    throw new Error(`Audio transcription failed: ${JSON.stringify(transcription)}`);
+  }
+  const cachedTranscription = await transcribeAudio();
+  if (cachedTranscription?.cached !== true || transcriptionRequests.length !== 1) {
+    throw new Error("Audio transcription cache failed");
+  }
+  if (
+    !String(transcriptionRequestHeaders[0]?.["content-type"] || "").startsWith(
+      "multipart/form-data; boundary=",
+    ) ||
+    transcriptionRequestHeaders[0]?.authorization ||
+    !transcriptionRequests[0]?.includes('name="model"') ||
+    !transcriptionRequests[0]?.includes("whisper-1") ||
+    !transcriptionRequests[0]?.includes('name="language"') ||
+    !transcriptionRequests[0]?.includes('name="prompt"') ||
+    !transcriptionRequests[0]?.includes("E2E glossary") ||
+    !transcriptionRequests[0]?.includes('name="response_format"') ||
+    !transcriptionRequests[0]?.includes("verbose_json") ||
+    !transcriptionRequests[0]?.includes('name="temperature"') ||
+    transcriptionRequests[0]?.includes('name="timestamp_granularities[]"')
+  ) {
+    throw new Error("OpenAI transcription multipart request is incomplete");
+  }
+
   const processSubtitle = () =>
     byok.evaluate(
       ({ engineId }) =>

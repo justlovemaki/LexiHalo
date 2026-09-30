@@ -40353,7 +40353,11 @@
           const t = e;
           if ("br" === t.tagName.toLowerCase()) return " ";
           let n = "";
-          for (const e of Array.from(t.childNodes)) n += a(e);
+          for (const e of Array.from(
+            /* LexiHalo: tolerate detached or malformed timed-text nodes. */ (t && t.childNodes) ||
+              [],
+          ))
+            n += a(e);
           return n;
         },
         o = [];
@@ -67659,11 +67663,13 @@
           ),
           [d, p] = (0, React.useState)(null),
           [_, h] = (0, React.useState)(!1),
+          [transcriptionTip, setTranscriptionTip] = (0, React.useState)(null),
           { locale: m } = useLocale(),
           [g, f] = (0, React.useState)(props.container.clientWidth / 60),
           [v, y] = (0, React.useState)(!1),
           b = (0, React.useRef)(null),
           w = (0, React.useRef)(null),
+          transcriptionTipTimer = (0, React.useRef)(0),
           sourceLanguage = s.target || c.language.subtitle,
           translationLanguage = s.native || c.language.translation,
           languagePair = `${sourceLanguage || "und"}:${translationLanguage || "und"}`,
@@ -67681,6 +67687,33 @@
           ),
           [],
         );
+        (0, React.useEffect)(() => {
+          const onTranscriptionStatus = (status) => {
+            window.clearTimeout(transcriptionTipTimer.current);
+            transcriptionTipTimer.current = 0;
+            if (!status || status.state === "idle" || status.state === "done") {
+              setTranscriptionTip(null);
+              return;
+            }
+            const tip = {
+              state: status.state === "error" ? "error" : "loading",
+              message: String(status.message || ""),
+            };
+            setTranscriptionTip(tip);
+            if (tip.state === "error") {
+              transcriptionTipTimer.current = window.setTimeout(() => {
+                transcriptionTipTimer.current = 0;
+                setTranscriptionTip(null);
+              }, 10000);
+            }
+          };
+          captionProvider.event.on("transcription.status", onTranscriptionStatus);
+          return () => {
+            window.clearTimeout(transcriptionTipTimer.current);
+            transcriptionTipTimer.current = 0;
+            captionProvider.event.off("transcription.status", onTranscriptionStatus);
+          };
+        }, []);
         (0, React.useEffect)(() => {
           const platformClass = `xtc-${captionProvider.platform}`;
           document.documentElement.classList.add(platformClass);
@@ -68438,7 +68471,26 @@
                   },
                   V ? V.seq : "rest",
                 ),
+              transcriptionTip &&
+                (0, jsxRuntime.jsxs)("div", {
+                  className: "trancy-caption-loading no-caption",
+                  children: [
+                    transcriptionTip.state === "loading" &&
+                      (0, jsxRuntime.jsx)("div", {
+                        className: "trancy-caption-loading-icon",
+                        children: (0, jsxRuntime.jsx)(Se, {}),
+                      }),
+                    (0, jsxRuntime.jsx)("div", {
+                      className:
+                        transcriptionTip.state === "error"
+                          ? "trancy-caption-error-text"
+                          : "trancy-caption-loading-text",
+                      children: transcriptionTip.message,
+                    }),
+                  ],
+                }),
               _ &&
+                !transcriptionTip &&
                 (0, jsxRuntime.jsx)("div", {
                   className: "trancy-caption-loading no-caption",
                   children: (0, jsxRuntime.jsx)("div", {
@@ -68447,6 +68499,7 @@
                   }),
                 }),
               Ae &&
+                !transcriptionTip &&
                 "youtube" === captionProvider.platform &&
                 (0, jsxRuntime.jsxs)("div", {
                   className: "trancy-caption-loading no-caption",
@@ -68470,6 +68523,7 @@
                   ],
                 }),
               v &&
+                !transcriptionTip &&
                 !qe &&
                 (0, jsxRuntime.jsxs)("div", {
                   className: "trancy-caption-loading",
@@ -69035,29 +69089,157 @@
           ne = () =>
             ij(null, null, function* () {
               if (G) return;
-              if (platformContext.duration > 43200)
-                return void $w.error(f("ai_sub_toast_too_long"), 4e3);
-              if (!c) return void extensionClient.toggleSlider("/setting/signup");
-              x("ai"), Y(!0);
-              let e = platformContext.audioLanguage ? platformContext.audioLanguage : "";
-              const { message: t, data: n } = yield g.postCaptions(
-                platformContext.id,
-                nj(
-                  {
-                    title: platformContext.youtubeInfo.title,
-                    cover: platformContext.youtubeInfo.poster,
-                    duration: platformContext.youtubeInfo.duration,
-                    target: l.language.subtitle,
-                  },
-                  e
-                    ? {
-                        language: e,
-                      }
-                    : {},
-                ),
-              );
-              if ("ok" !== t) return N(t), void Y(!1);
-              te(60);
+              Y(!0), N(null), Z(!1);
+              const fetchingMessage = String(l.language.interface || "").startsWith("zh")
+                ? "正在获取视频音频…"
+                : "Fetching video audio…";
+              ee(fetchingMessage);
+              captionProvider.event.emit("transcription.status", {
+                state: "loading",
+                message: fetchingMessage,
+              });
+              try {
+                if (
+                  "youtube" === captionProvider.platform &&
+                  typeof platformContext.getYoutubeTracks === "function"
+                ) {
+                  yield platformContext.getYoutubeTracks().catch(() => null);
+                }
+                let streams = [];
+                try {
+                  streams = platformContext.streams || [];
+                } catch {}
+                const adaptiveFormats =
+                  platformContext.context?.ytInitialPlayerResponse?.streamingData
+                    ?.adaptiveFormats || [];
+                streams.push(
+                  ...adaptiveFormats
+                    .filter(
+                      (format) =>
+                        format?.url &&
+                        String(format.mimeType || "")
+                          .toLowerCase()
+                          .includes("audio"),
+                    )
+                    .map((format) => ({
+                      size: Number(format.contentLength) || 0,
+                      bitrate: Number(format.bitrate) || 0,
+                      mimeType: format.mimeType,
+                      urls: [format.url],
+                    })),
+                );
+                const video = captionProvider.video || document.querySelector("video");
+                const mediaUrl = video?.currentSrc || video?.src || "";
+                if (/^https?:\/\//i.test(mediaUrl) && !/\.(?:m3u8|mpd)(?:$|\?)/i.test(mediaUrl)) {
+                  const path = (() => {
+                    try {
+                      return new URL(mediaUrl).pathname.toLowerCase();
+                    } catch {
+                      return "";
+                    }
+                  })();
+                  streams.push({
+                    size: 0,
+                    bitrate: Number.MAX_SAFE_INTEGER,
+                    mimeType: /\.webm$/.test(path) ? "video/webm" : "video/mp4",
+                    urls: [mediaUrl],
+                  });
+                }
+                const bilibiliAudio = globalThis.__playinfo__?.data?.dash?.audio || [];
+                streams.push(
+                  ...bilibiliAudio
+                    .map((format) => ({
+                      size: Number(format.size) || 0,
+                      bitrate: Number(format.bandwidth) || 0,
+                      mimeType: format.mimeType || "audio/mp4",
+                      urls: [format.baseUrl || format.base_url],
+                    }))
+                    .filter((stream) => stream.urls[0]),
+                );
+                const seenAudioUrls = new Set();
+                const candidates = streams
+                  .filter((stream) => {
+                    const url = stream?.urls?.[0];
+                    if (!url || seenAudioUrls.has(url)) return false;
+                    seenAudioUrls.add(url);
+                    return true;
+                  })
+                  .sort((left, right) => {
+                    const leftSize = Number(left.size) || Number.MAX_SAFE_INTEGER;
+                    const rightSize = Number(right.size) || Number.MAX_SAFE_INTEGER;
+                    return (
+                      leftSize - rightSize ||
+                      (Number(left.bitrate) || 0) - (Number(right.bitrate) || 0)
+                    );
+                  });
+                const maxBytes = 24 * 1024 * 1024;
+                const stream =
+                  candidates.find(
+                    (candidate) => !Number(candidate.size) || Number(candidate.size) <= maxBytes,
+                  ) || candidates[0];
+                if (!stream?.urls?.[0]) {
+                  throw new Error(
+                    "当前平台未暴露可直接读取的音频流；受 DRM 保护的视频无法由浏览器扩展提取音频",
+                  );
+                }
+                if (Number(stream.size) > maxBytes) {
+                  throw new Error(
+                    `最小音频流 ${(Number(stream.size) / 1024 / 1024).toFixed(1)} MB，超过 24 MB 上传限制`,
+                  );
+                }
+                const transcribingMessage = String(l.language.interface || "").startsWith("zh")
+                  ? "正在上传音频并生成字幕…"
+                  : "Uploading audio and generating captions…";
+                ee(transcribingMessage);
+                captionProvider.event.emit("transcription.status", {
+                  state: "loading",
+                  message: transcribingMessage,
+                });
+                const transcribe = globalThis.lexihaloTranscribeAudio;
+                if (typeof transcribe !== "function") {
+                  throw new Error("音频识别服务尚未就绪，请刷新页面后重试");
+                }
+                const result = yield transcribe({
+                  audioUrl: stream.urls[0],
+                  mimeType: stream.mimeType || "audio/webm",
+                  audioBytes: Number(stream.size) || 0,
+                  videoId: platformContext.vid || platformContext.id,
+                  duration: Number(platformContext.duration) || 0,
+                  language: platformContext.audioLanguage || l.language.subtitle || "auto",
+                  engineId: u.subtitle?._id || "",
+                });
+                captionProvider.installTranscription(result.segments, result.language);
+                const completedMessage = String(l.language.interface || "").startsWith("zh")
+                  ? "AI 字幕生成完成"
+                  : "AI captions generated";
+                ee(completedMessage);
+                U("ok"), Z(!0), S(!1);
+                captionProvider.event.emit("transcription.status", {
+                  state: "done",
+                  message: completedMessage,
+                });
+                captionProvider.event.emit("whisperx", {
+                  enabled: !0,
+                  local: !0,
+                });
+              } catch (error) {
+                const message = error?.message || String(error);
+                ee(
+                  String(l.language.interface || "").startsWith("zh")
+                    ? "识别失败"
+                    : "Transcription failed",
+                );
+                N(message), Z(!1);
+                captionProvider.event.emit("transcription.status", {
+                  state: "error",
+                  message,
+                });
+                if (/BYOK|OpenAI/.test(message)) {
+                  extensionClient.open("byok.html?provider=OpenAI", !1);
+                }
+              } finally {
+                Y(!1);
+              }
             }),
           [re, ie] = (0, React.useState)([]),
           [ae, oe] = (0, React.useState)([]),
@@ -69104,17 +69286,17 @@
           };
         }, []);
         (0, React.useEffect)(() => {
-          "youtube" === captionProvider.platform && c && s.enabled && X();
           const e = () => {
             "youtube" === captionProvider.platform &&
-              c &&
               s.enabled &&
               (U("none"),
               Y(!1),
               Z(!1),
               clearTimeout(J.current),
               (captionProvider.endableWhisper = !1),
-              X()),
+              captionProvider.event.emit("transcription.status", {
+                state: "idle",
+              })),
               s.enabled || (I(!1), Z(!1));
           };
           return (
@@ -69280,7 +69462,7 @@
             ij(null, null, function* () {
               s.enabled &&
                 ("ok" !== $
-                  ? (S(!0), x("ai"), ne())
+                  ? ne()
                   : (Z(!K),
                     captionProvider.event.emit("whisperx", {
                       enabled: !K,
@@ -69288,6 +69470,7 @@
             });
           return (
             extensionClient.off("ai-transcribe"),
+            extensionClient.on("ai-transcribe", e),
             () => {
               extensionClient.off("ai-transcribe");
             }
@@ -69506,7 +69689,45 @@
                             }),
                         ],
                       }),
-                      null,
+                      (0, jsxRuntime.jsx)("div", {
+                        className: "trancy-menuitem-group",
+                        children: (0, jsxRuntime.jsxs)("div", {
+                          className: xb()("trancy-menuitem", {
+                            disabled: G,
+                          }),
+                          role: "button",
+                          tabIndex: 0,
+                          "data-lexihalo-audio-transcribe": "true",
+                          onClick: () => {
+                            void ne();
+                          },
+                          onKeyDown: (event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              void ne();
+                            }
+                          },
+                          children: [
+                            (0, jsxRuntime.jsx)("div", {
+                              className: "trancy-menuitem-icon",
+                              children: (0, jsxRuntime.jsx)(yt, {}),
+                            }),
+                            (0, jsxRuntime.jsx)("div", {
+                              className: "trancy-menuitem-label",
+                              children: String(l.language.interface || "").startsWith("zh")
+                                ? "AI 字幕（音频转写）"
+                                : "AI Captions (Audio transcription)",
+                            }),
+                            (0, jsxRuntime.jsx)("div", {
+                              className: "trancy-menuitem-action",
+                              children: (0, jsxRuntime.jsx)("div", {
+                                className: "trancy-action-label",
+                                children: G ? Q : K ? f("caption_ai_status_3") : "OpenAI",
+                              }),
+                            }),
+                          ],
+                        }),
+                      }),
                       (0, jsxRuntime.jsxs)("div", {
                         className: "trancy-menuitem-group",
                         children: [
@@ -70717,6 +70938,110 @@
 
   const provider = window.captionProvider;
   if (!provider) return;
+
+  const requestSubtitleService = (type, payload = {}, timeoutMs = 720000) =>
+    new Promise((resolve, reject) => {
+      const requestId = crypto.randomUUID();
+      let settled = false;
+      const finish = (response, error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        window.removeEventListener("message", onMessage);
+        error
+          ? reject(error)
+          : response?.ok
+            ? resolve(response.data)
+            : reject(new Error(response?.error || "音频识别请求失败"));
+      };
+      const onMessage = (event) => {
+        if (
+          event.source === window &&
+          event.data?.eventName === "lexihalo:subtitle-ai-response" &&
+          event.data?.requestId === requestId
+        ) {
+          finish(event.data.response);
+        }
+      };
+      const timeout = window.setTimeout(
+        () => finish(null, new Error("音频识别请求超时")),
+        timeoutMs,
+      );
+      window.addEventListener("message", onMessage);
+      window.postMessage(
+        {
+          eventName: "lexihalo:subtitle-ai-request",
+          requestId,
+          type,
+          payload,
+        },
+        "*",
+      );
+    });
+
+  const localTranscriptions = new Map();
+  const originalCaptionLoad = provider.load.bind(provider);
+  provider.installTranscription = (segments, language = "auto") => {
+    if (!Array.isArray(segments) || !segments.length) {
+      throw new Error("音频识别没有返回可用字幕");
+    }
+    const videoId = provider.id;
+    const vid = window.metacontext?.vid || videoId;
+    const lines = segments
+      .map((segment, index) => {
+        const text = String(segment?.text || "")
+          .replace(/\s+/g, " ")
+          .trim();
+        const start = Math.max(0, Number(segment?.start) || 0);
+        const end = Math.max(start + 1, Number(segment?.end) || start + 1);
+        return text
+          ? {
+              text,
+              originalText: text,
+              start,
+              end,
+              idx: index,
+              tokens: [],
+              sid: `${vid}:${start}:${end}`,
+              vid,
+            }
+          : null;
+      })
+      .filter(Boolean);
+    if (!lines.length) throw new Error("音频识别没有返回可用字幕");
+    localTranscriptions.set(videoId, { lines, language });
+    const previous = provider.captionCache?.get?.(videoId) || {};
+    provider.captionCache?.set?.(videoId, {
+      ...previous,
+      whisperLines: lines,
+    });
+    provider.endableWhisper = true;
+    provider.strategy = "preload";
+    provider.lastPretransCurrent = -1;
+    provider.seekFirstBatch = true;
+    provider.pretransFailedAt = 0;
+    provider.event?.emit?.("changed", {
+      current: provider.current,
+      forceUpdate: true,
+      transcription: true,
+    });
+    return lines;
+  };
+  provider.load = async (...args) => {
+    const local = localTranscriptions.get(provider.id);
+    if (provider.endableWhisper && local?.lines?.length) {
+      const previous = provider.captionCache?.get?.(provider.id) || {};
+      provider.captionCache?.set?.(provider.id, {
+        ...previous,
+        whisperLines: local.lines,
+      });
+      provider.strategy = "preload";
+      return { lines: local.lines, languageCode: local.language };
+    }
+    return originalCaptionLoad(...args);
+  };
+  globalThis.lexihaloTranscribeAudio = (payload) =>
+    requestSubtitleService("lexihalo:subtitle-ai:transcribe", payload);
 
   let youtubeNativeCaptionWasEnabled = false;
   let youtubeNativeCaptionSuppressionActive = false;

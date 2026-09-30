@@ -18,6 +18,20 @@
 
 Video 运行时将 `repaired` 写入主字幕，将 `translation` 写入副字幕，同时保留 `originalText`，以便清理页面结果时无需重新下载字幕轨道。
 
+## 无字幕视频的音频识别
+
+BYOK 的 OpenAI / OpenAI 兼容引擎可以额外配置音频识别模型和 Endpoint。在所有受支持的视频平台，可从播放器的 LexiHalo 菜单中点击“AI 字幕（音频转写）”生成字幕：
+
+1. 优先从平台播放信息中选择体积最小的独立音频流；若平台没有独立音频元数据，则尝试播放器公开的 HTTP(S) 直连媒体文件；
+2. Background 校验请求来自受支持的视频网站，获取媒体并检查 24 MB 上限；
+3. 使用 `multipart/form-data` 将音频直接发送到配置的 `/v1/audio/transcriptions`；表单字段为 `file`、`model`、`language`、`prompt`、`response_format=verbose_json` 和 `temperature=0`，`Content-Type` 及 boundary 由浏览器的 `FormData` 自动生成；localhost/127.0.0.1 接口使用浏览器 Cookie 凭据且不自动添加 Bearer Header，其他接口使用配置的 API Key；
+4. 从 `verbose_json` 的 `segments` 时间戳将识别结果转换为本地字幕轨道；同时兼容代理常见的 `data.segments`、`result.segments`、`chunks`、`utterances`、`words`、`HH:MM:SS` 时间以及显式的 `start_ms/end_ms`。解析器会结合响应 `duration` 自动判断普通 `start/end` 使用秒还是毫秒；若接口只返回一个全文分段，则必须提供 word 时间戳才能重新分组，不再按字符比例伪造时间轴；
+5. 生成的原字幕继续进入既有的 AI 修复、翻译、预取和双语显示流程。
+
+默认模型为 `whisper-1`。BYOK 页面可覆盖音频识别语言（兼容 `zh`、`zh-CN` 或自定义接口使用的“中文”等值）及提示词。其他模型只有在返回 `segments[].start/end/text` 时才能用于视频字幕。识别结果按视频、引擎、模型和语言缓存在 `chrome.storage.local`；“彻底清除 AI 字幕缓存”也会删除音频识别缓存。API Key 与音频均直接发送到用户配置的服务商，不经过 LexiHalo 中间服务器。
+
+入口在所有平台都会显示。普通 MP4/WebM、平台公开的独立音频流等可以直接处理；DRM、加密分片或仅暴露 `blob:` MediaSource 的播放器无法安全提取完整音频，此时菜单会显示具体错误，而不会误报已经开始转写。
+
 ## 触发时机
 
 字幕提供器激活并加载到字幕轨道后，会启动 250ms 调度循环。只有同时满足以下条件才会发起 AI 请求：
@@ -65,6 +79,6 @@ AI 字幕请求复用 Background 的供应商适配层，而不是单独拼装 `
 - **重新载入当前字幕**：清除页面和普通翻译内存结果，恢复 `originalText`，保留持久 AI 缓存；已处理字幕可以立即恢复。
 - **彻底清除 AI 字幕缓存**：同时删除持久 AI 修复/翻译缓存；下次播放会重新调用模型。
 
-BYOK 页面提供“AI 字幕诊断”，记录组合请求、同模型兜底和机器翻译兜底的服务商、模型、Endpoint、批次、字符数、token 预算、耗时及错误；不记录字幕正文或 API Key。
+BYOK 页面提供“AI 字幕诊断”，记录组合请求、同模型兜底、机器翻译兜底和音频识别的服务商、模型、Endpoint、音频字节数、分段数、批次、字符数、token 预算、耗时及错误；不记录字幕正文、音频内容或 API Key。
 
 构建后的缓存 UI 和运行代码分别位于 `assets/edreader-main.js`、`assets/edvideo-main.js` 和 `assets/background.js`；可维护源码位于 `src/`，相关构建补丁位于 `tools/build-readable-bundles.mjs`。

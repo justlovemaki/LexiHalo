@@ -62,11 +62,13 @@ export function recoverDualCaptionApp(dependencies) {
       ),
       [d, p] = (0, React.useState)(null),
       [_, h] = (0, React.useState)(!1),
+      [transcriptionTip, setTranscriptionTip] = (0, React.useState)(null),
       { locale: m } = useLocale(),
       [g, f] = (0, React.useState)(props.container.clientWidth / 60),
       [v, y] = (0, React.useState)(!1),
       b = (0, React.useRef)(null),
       w = (0, React.useRef)(null),
+      transcriptionTipTimer = (0, React.useRef)(0),
       sourceLanguage = s.target || c.language.subtitle,
       translationLanguage = s.native || c.language.translation,
       languagePair = `${sourceLanguage || "und"}:${translationLanguage || "und"}`,
@@ -84,6 +86,39 @@ export function recoverDualCaptionApp(dependencies) {
       ),
       [],
     );
+    (0, React.useEffect)(() => {
+      const onTranscriptionStatus = (status) => {
+        window.clearTimeout(transcriptionTipTimer.current);
+        transcriptionTipTimer.current = 0;
+        if (!status || status.state === "idle" || status.state === "done") {
+          setTranscriptionTip(null);
+          return;
+        }
+        const tip = {
+          state: status.state === "error" ? "error" : "loading",
+          message: String(status.message || ""),
+        };
+        setTranscriptionTip(tip);
+        if (tip.state === "error") {
+          transcriptionTipTimer.current = window.setTimeout(() => {
+            transcriptionTipTimer.current = 0;
+            setTranscriptionTip(null);
+          }, 10000);
+        }
+      };
+      captionProvider.event.on(
+        "transcription.status",
+        onTranscriptionStatus,
+      );
+      return () => {
+        window.clearTimeout(transcriptionTipTimer.current);
+        transcriptionTipTimer.current = 0;
+        captionProvider.event.off(
+          "transcription.status",
+          onTranscriptionStatus,
+        );
+      };
+    }, []);
     (0, React.useEffect)(() => {
       const platformClass = `xtc-${captionProvider.platform}`;
       document.documentElement.classList.add(platformClass);
@@ -879,7 +914,26 @@ export function recoverDualCaptionApp(dependencies) {
               },
               V ? V.seq : "rest",
             ),
+          transcriptionTip &&
+            (0, jsxRuntime.jsxs)("div", {
+              className: "trancy-caption-loading no-caption",
+              children: [
+                transcriptionTip.state === "loading" &&
+                  (0, jsxRuntime.jsx)("div", {
+                    className: "trancy-caption-loading-icon",
+                    children: (0, jsxRuntime.jsx)(Se, {}),
+                  }),
+                (0, jsxRuntime.jsx)("div", {
+                  className:
+                    transcriptionTip.state === "error"
+                      ? "trancy-caption-error-text"
+                      : "trancy-caption-loading-text",
+                  children: transcriptionTip.message,
+                }),
+              ],
+            }),
           _ &&
+            !transcriptionTip &&
             (0, jsxRuntime.jsx)("div", {
               className: "trancy-caption-loading no-caption",
               children: (0, jsxRuntime.jsx)("div", {
@@ -888,6 +942,7 @@ export function recoverDualCaptionApp(dependencies) {
               }),
             }),
           Ae &&
+            !transcriptionTip &&
             "youtube" === captionProvider.platform &&
             (0, jsxRuntime.jsxs)("div", {
               className: "trancy-caption-loading no-caption",
@@ -911,6 +966,7 @@ export function recoverDualCaptionApp(dependencies) {
               ],
             }),
           v &&
+            !transcriptionTip &&
             !qe &&
             (0, jsxRuntime.jsxs)("div", {
               className: "trancy-caption-loading",
